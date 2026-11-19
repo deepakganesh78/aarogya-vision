@@ -1,0 +1,107 @@
+{
+  "corpus": "young-infant-danger-signs",
+  "version": "2026.11-draft",
+  "notice": "Paraphrased summaries for prototyping only. Verify every entry against the official document and obtain clinician sign-off before field use.",
+  "entries": [
+    {
+      "id": "who-very-severe-disease",
+      "title": "Very severe disease in young infants",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "A young infant with any one of these signs is classified as having very severe disease: not feeding well, convulsions, fast breathing (60 or more breaths per minute) in an infant under 7 days old, severe chest indrawing, fever (37.5 °C or above), low body temperature (below 35.5 °C), or movement only when stimulated or no movement at all.",
+      "action": "Classified for urgent referral to hospital, with pre-referral care given by a trained health worker as the guideline describes.",
+      "signs": ["not_feeding_well", "convulsions", "fast_breathing", "severe_chest_indrawing", "fever", "low_temperature", "low_movement"],
+      "keywords": ["feed", "feeding", "suck", "fits", "convulsion", "fever", "hot", "cold", "breathing", "lethargic", "not moving"]
+    },
+    {
+      "id": "who-fast-breathing-7-59-days",
+      "title": "Fast breathing in infants aged 7-59 days",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "Fast breathing (60 or more per minute) as the only sign in an infant aged 7-59 days is classified as pneumonia, which a trained health worker may manage as an outpatient with close follow-up. In an infant under 7 days old it is a sign of very severe disease.",
+      "action": "Needs clinician assessment the same day. This prototype tells the ASHA to refer; the doctor decides management.",
+      "signs": ["fast_breathing"],
+      "keywords": ["breathing", "breath", "fast"]
+    },
+    {
+      "id": "who-local-bacterial-infection",
+      "title": "Local bacterial infection of the umbilicus or skin",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "An umbilicus that is red or draining pus, or skin pustules, is classified as local bacterial infection when no sign of very severe disease is present.",
+      "action": "Managed by a trained health worker according to the guideline, with home-care advice and a follow-up visit.",
+      "signs": ["umbilicus_red_or_pus", "few_skin_pustules"],
+      "keywords": ["navel", "umbilicus", "umbilical", "pus", "pustule", "boil", "red"]
+    },
+    {
+      "id": "imnci-india-serious-skin-umbilical",
+      "title": "Spreading umbilical redness or many skin pustules",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Integrated Management of Neonatal and Childhood Illness (IMNCI) chart booklet",
+        "year": null,
+        "url": null
+      },
+      "summary": "India's IMNCI chart booklet treats umbilical redness extending to the skin, or 10 or more skin pustules or a big boil, as signs of possible serious bacterial infection.",
+      "action": "Urgent referral to a facility as the IMNCI chart booklet describes.",
+      "signs": ["umbilical_redness_spreading", "many_skin_pustules"],
+      "keywords": ["navel", "umbilicus", "umbilical", "spreading", "pustule", "boil", "red"]
+    },
+    {
+      "id": "who-jaundice",
+      "title": "Jaundice in young infants",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "Jaundice appearing within the first 24 hours of life, or yellow palms and soles at any age, is classified as severe jaundice. Jaundice without these features is managed with home-care advice and follow-up.",
+      "action": "Severe jaundice: urgent referral. Otherwise advise the family, follow up, and return immediately if the palms or soles turn yellow.",
+      "signs": ["severe_jaundice", "jaundice"],
+      "keywords": ["yellow", "jaundice", "palms", "soles", "eyes"]
+    },
+    {
+      "id": "pre-referral-care",
+      "title": "Keeping a sick young infant safe during referral",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Home Based Newborn Care (HBNC) operational guidelines",
+        "year": 2014,
+        "url": null
+      },
+      "summary": "When a sick newborn is referred, keep the baby warm (skin-to-skin contact with the mother), continue breastfeeding if the baby is able to feed, and arrange transport to the referral facility without delay.",
+      "action": "Arrange government referral transport where available (for example 102 or 108) and inform the receiving facility.",
+      "signs": [],
+      "keywords": ["refer", "referral", "transport", "ambulance", "warm"],
+      "boostForLevels": ["URGENT"]
+    },
+    {
+      "id": "hbnc-home-visits",
+      "title": "Home-based newborn care visits by ASHAs",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Home Based Newborn Care (HBNC) operational guidelines",
+        "year": 2014,
+        "url": null
+      },
+      "summary": "ASHAs make scheduled home visits during the first six weeks of life to check the newborn for danger signs, support breastfeeding and warmth, and refer sick newborns.",
+      "action": "Continue scheduled visits and teach the family the danger signs that need immediate care.",
+      "signs": [],
+      "keywords": ["visit", "home visit", "newborn", "schedule"],
+      "boostForLevels": ["ROUTINE"]
+    }
+  ]
+}

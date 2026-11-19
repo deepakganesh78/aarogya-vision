@@ -1,0 +1,10 @@
+/* Self-hosted Google fonts (no third-party font requests at runtime). */
+@import '@fontsource/roboto/latin-400.css';
+@import '@fontsource/roboto/latin-500.css';
+@import '@fontsource/roboto/latin-700.css';
+@import '@fontsource/noto-sans-tamil/tamil-400.css';
+@import '@fontsource/noto-sans-tamil/tamil-500.css';
+@import '@fontsource/noto-sans-tamil/tamil-700.css';
+@import '@fontsource/noto-sans-devanagari/devanagari-400.css';
+@import '@fontsource/noto-sans-devanagari/devanagari-500.css';
+@import '@fontsource/noto-sans-devanagari/devanagari-700.css';

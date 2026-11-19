@@ -1,0 +1,196 @@
+{
+  "type": "object",
+  "properties": {
+    "reported": {
+      "type": "object",
+      "description": "Values the worker explicitly states in the voice note or notes. Use null when not stated. Never estimate.",
+      "properties": {
+        "age_days": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 365,
+              "description": "Age in days (convert weeks or months: 1 week = 7 days, 1 month = 30 days)."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sex": {
+          "type": "string",
+          "enum": [
+            "female",
+            "male",
+            "unknown"
+          ]
+        },
+        "temperature_c": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 25,
+              "maximum": 45,
+              "description": "Measured temperature in °C (convert °F)."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "breaths_per_min": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "age_days",
+        "sex",
+        "temperature_c",
+        "breaths_per_min"
+      ]
+    },
+    "language_detected": {
+      "type": "string",
+      "description": "ISO 639-1 code of the spoken language, or \"none\" if there is no voice note."
+    },
+    "transcript_original": {
+      "type": "string",
+      "description": "Verbatim transcript in the original language and script. Empty string if no voice note."
+    },
+    "transcript_english": {
+      "type": "string",
+      "description": "Faithful English translation of the transcript. Empty string if no voice note."
+    },
+    "danger_signs": {
+      "type": "array",
+      "description": "Only signs with explicit evidence in the voice note or photo.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sign_id": {
+            "type": "string",
+            "enum": [
+              "not_feeding_well",
+              "convulsions",
+              "fast_breathing",
+              "severe_chest_indrawing",
+              "fever",
+              "low_temperature",
+              "low_movement",
+              "umbilical_redness_spreading",
+              "umbilicus_red_or_pus",
+              "many_skin_pustules",
+              "few_skin_pustules",
+              "severe_jaundice",
+              "jaundice"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "absent"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "voice",
+              "photo"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "description": "Short quote (translated to English) or neutral visual description supporting the status."
+          }
+        },
+        "required": [
+          "sign_id",
+          "status",
+          "source",
+          "confidence",
+          "evidence"
+        ]
+      }
+    },
+    "photo_quality": {
+      "type": "string",
+      "enum": [
+        "good",
+        "poor",
+        "unusable",
+        "not_provided"
+      ]
+    },
+    "photo_observations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Neutral descriptions of what is visible. No diagnoses."
+    },
+    "summary_for_doctor": {
+      "type": "string",
+      "description": "3 to 5 factual, non-diagnostic sentences in English."
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "follow_up_questions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "properties": {
+          "english": {
+            "type": "string"
+          },
+          "worker_language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "english",
+          "worker_language"
+        ]
+      }
+    },
+    "uncertainty_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "reported",
+    "language_detected",
+    "transcript_original",
+    "transcript_english",
+    "danger_signs",
+    "photo_quality",
+    "photo_observations",
+    "summary_for_doctor",
+    "missing_information",
+    "follow_up_questions",
+    "uncertainty_notes"
+  ]
+}

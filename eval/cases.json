@@ -1,0 +1,26 @@
+{
+  "notice": "Synthetic cases for testing only. Expected levels follow this prototype's draft rules and must be re-validated by a clinician.",
+  "cases": [
+    { "id": "routine-day14", "ageDays": 14, "signs": {}, "notes": "Day 14 visit. Baby is feeding well, active, warm to touch but not hot.", "expected": "ROUTINE" },
+    { "id": "boundary-normal-vitals", "ageDays": 2, "signs": {}, "temperatureC": 37.4, "breathsPerMin": 58, "notes": "Breathing counted at 58. Temperature 37.4.", "expected": "ROUTINE" },
+    { "id": "not-feeding-day8", "ageDays": 8, "signs": { "not_feeding_well": "yes" }, "notes": "Mother says the baby stopped sucking since last night.", "expected": "URGENT" },
+    { "id": "fever-measured", "ageDays": 3, "signs": {}, "temperatureC": 38.0, "notes": "Temperature 38 under the arm.", "expected": "URGENT" },
+    { "id": "fever-threshold-exact", "ageDays": 21, "signs": {}, "temperatureC": 37.5, "notes": "Temperature 37.5.", "expected": "URGENT" },
+    { "id": "hypothermia", "ageDays": 20, "signs": {}, "temperatureC": 35.2, "notes": "Baby feels cold, temperature 35.2.", "expected": "URGENT" },
+    { "id": "felt-hot-normal-reading", "ageDays": 15, "signs": { "fever": "yes" }, "temperatureC": 36.9, "notes": "Mother says the baby felt very hot this morning.", "expected": "URGENT" },
+    { "id": "fast-breathing", "ageDays": 5, "signs": {}, "breathsPerMin": 64, "notes": "Counted 64 breaths in one minute.", "expected": "URGENT" },
+    { "id": "convulsions", "ageDays": 30, "signs": { "convulsions": "yes" }, "notes": "Family saw the baby have fits twice today.", "expected": "URGENT" },
+    { "id": "chest-indrawing", "ageDays": 40, "signs": { "severe_chest_indrawing": "yes" }, "notes": "Lower chest pulls in strongly with each breath.", "expected": "URGENT" },
+    { "id": "low-movement", "ageDays": 25, "signs": { "low_movement": "yes" }, "notes": "Baby only moves when we touch him.", "expected": "URGENT" },
+    { "id": "umbilicus-local", "ageDays": 10, "signs": { "umbilicus_red_or_pus": "yes" }, "notes": "Navel is red with a little pus, redness not spreading.", "expected": "PRIORITY" },
+    { "id": "umbilicus-spreading", "ageDays": 10, "signs": { "umbilical_redness_spreading": "yes" }, "notes": "Redness around the navel is spreading onto the belly.", "expected": "URGENT" },
+    { "id": "few-pustules", "ageDays": 12, "signs": { "few_skin_pustules": "yes" }, "notes": "Three small pus spots on the neck.", "expected": "PRIORITY" },
+    { "id": "many-pustules", "ageDays": 12, "signs": { "many_skin_pustules": "yes" }, "notes": "Many pus spots all over the back, more than ten.", "expected": "URGENT" },
+    { "id": "jaundice-day0", "ageDays": 0, "signs": { "jaundice": "yes" }, "notes": "Skin looks yellow on the first day.", "expected": "URGENT" },
+    { "id": "jaundice-mild", "ageDays": 6, "signs": { "jaundice": "yes" }, "notes": "Eyes look slightly yellow, palms and soles are not yellow.", "expected": "PRIORITY" },
+    { "id": "severe-jaundice", "ageDays": 9, "signs": { "severe_jaundice": "yes" }, "notes": "Palms and soles are yellow.", "expected": "URGENT" },
+    { "id": "incomplete-checklist", "ageDays": 9, "signs": { "convulsions": "unknown", "low_movement": "unknown" }, "notes": "Could not finish the check, baby was asleep.", "expected": "PRIORITY" },
+    { "id": "out-of-scope-age", "ageDays": 70, "signs": {}, "notes": "Older infant, mother worried about a cough.", "expected": "PRIORITY" },
+    { "id": "voice-only-danger", "ageDays": 18, "signs": {}, "notes": "Mother says the baby is not feeding at all since morning.", "expected": "ROUTINE", "expectedWithAi": "URGENT", "comment": "Checklist says no, but the voice note reports a danger sign. With AI the case must be raised." }
+  ]
+}

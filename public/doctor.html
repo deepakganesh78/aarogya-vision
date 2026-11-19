@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0056d2" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Aarogya-Vision · Doctor review</title>
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/vendor/theme.css" />
+    <link rel="stylesheet" href="/vendor/fonts.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="modulepreload" href="/vendor/material.js" />
+    <script type="module" src="/js/doctor-app.js"></script>
+  </head>
+  <body class="doctor">
+    <header class="top-app-bar">
+      <div class="top-app-bar__brand">
+        <md-icon data-icon="stethoscope"></md-icon>
+        <div>
+          <div class="top-app-bar__title md-typescale-title-large">Aarogya-Vision</div>
+        </div>
+        <span class="md-typescale-body-medium top-app-bar__subtitle">Doctor review</span>
+      </div>
+      <span id="ai-badge" class="status-pill neutral md-typescale-label-large"><md-icon data-icon="star_shine"></md-icon><span id="ai-badge-text">AI</span></span>
+      <span id="doctor-name" class="md-typescale-body-medium on-surface-variant"></span>
+      <md-icon-button id="sign-out" aria-label="Sign out" hidden><md-icon data-icon="logout"></md-icon></md-icon-button>
+    </header>
+    <div class="banner md-typescale-body-medium" role="note">
+      <md-icon data-icon="info"></md-icon>
+      <span id="prototype-banner">Prototype for demonstration with synthetic or role-play cases only. Not for clinical use.</span>
+    </div>
+
+    <main>
+      <section id="view-login" class="view login" hidden>
+        <div class="login__intro">
+          <md-icon data-icon="stethoscope"></md-icon>
+          <h1 class="md-typescale-headline-medium">Doctor sign in</h1>
+          <p class="md-typescale-body-large on-surface-variant">Review home-visit cases from ASHA workers and send next steps.</p>
+        </div>
+        <md-outlined-card class="card">
+          <form id="login-form" class="card-body">
+            <md-outlined-text-field id="access-code" label="Access code" autocomplete="off" autocapitalize="off" spellcheck="false" required></md-outlined-text-field>
+            <p id="login-error" class="error-text md-typescale-body-medium" role="alert" hidden></p>
+            <div class="row">
+              <md-filled-button id="login-submit" type="submit"><md-icon slot="icon" data-icon="lock"></md-icon>Sign in</md-filled-button>
+            </div>
+          </form>
+        </md-outlined-card>
+      </section>
+
+      <section id="view-dash" class="view" hidden>
+        <div id="alert-banner" class="alert-banner md-typescale-title-small" role="alert" hidden>
+          <span id="alert-text"></span>
+          <md-text-button id="alert-dismiss">Dismiss</md-text-button>
+        </div>
+        <div class="list-detail">
+          <aside class="pane pane--list" aria-label="Case queue">
+            <div class="pane__header">
+              <h2 class="md-typescale-title-large">Cases</h2>
+              <span id="queue-updated" class="md-typescale-body-small on-surface-variant" role="status"></span>
+            </div>
+            <md-tabs id="queue-tabs" aria-label="Queue filter">
+              <md-primary-tab data-view="open">Open</md-primary-tab>
+              <md-primary-tab data-view="responded">Responded</md-primary-tab>
+              <md-primary-tab data-view="all">All</md-primary-tab>
+            </md-tabs>
+            <md-list id="queue" class="queue"></md-list>
+            <div id="queue-empty" class="empty-state" hidden>
+              <md-icon data-icon="inbox"></md-icon>
+              <p class="md-typescale-title-medium">No cases here</p>
+              <p class="md-typescale-body-medium">New cases from ASHA workers appear here, most urgent first.</p>
+            </div>
+          </aside>
+          <section id="detail" class="detail" aria-live="polite">
+            <div class="detail-empty">
+              <md-icon data-icon="medical_information"></md-icon>
+              <p class="md-typescale-title-medium">Select a case to review</p>
+              <p class="md-typescale-body-medium">Urgent cases are listed first. AI summaries are labelled and cite their guidance.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

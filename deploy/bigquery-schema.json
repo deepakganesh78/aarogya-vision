@@ -1,0 +1,17 @@
+[
+  { "name": "event", "type": "STRING", "mode": "REQUIRED", "description": "triaged or decided" },
+  { "name": "event_at", "type": "TIMESTAMP", "mode": "REQUIRED" },
+  { "name": "case_key", "type": "STRING", "mode": "REQUIRED", "description": "Keyed-HMAC pseudonym of the case ID" },
+  { "name": "worker_key", "type": "STRING", "mode": "NULLABLE", "description": "Keyed-HMAC pseudonym of the ASHA ID" },
+  { "name": "age_band", "type": "STRING", "mode": "NULLABLE", "description": "0-6d, 7-27d, 28-59d, 60d+" },
+  { "name": "language", "type": "STRING", "mode": "NULLABLE" },
+  { "name": "level", "type": "STRING", "mode": "NULLABLE", "description": "URGENT, PRIORITY or ROUTINE" },
+  { "name": "signs_present", "type": "STRING", "mode": "REPEATED", "description": "Danger-sign IDs" },
+  { "name": "ai_status", "type": "STRING", "mode": "NULLABLE" },
+  { "name": "ai_raised_level", "type": "BOOL", "mode": "NULLABLE", "description": "AI findings raised urgency above the checklist rules" },
+  { "name": "has_photo", "type": "BOOL", "mode": "NULLABLE" },
+  { "name": "has_audio", "type": "BOOL", "mode": "NULLABLE" },
+  { "name": "outcome", "type": "STRING", "mode": "NULLABLE", "description": "Doctor decision outcome" },
+  { "name": "minutes_to_decision", "type": "FLOAT", "mode": "NULLABLE" },
+  { "name": "rules_version", "type": "STRING", "mode": "NULLABLE" }
+]

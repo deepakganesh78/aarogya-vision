@@ -1,0 +1,5 @@
+#!include:.dockerignore
+e2e
+test
+eval
+docs

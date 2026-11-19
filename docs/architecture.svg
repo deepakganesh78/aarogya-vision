@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="t d">
+  <title id="t">Aarogya-Vision architecture on Google Cloud</title>
+  <desc id="d">ASHA worker Material 3 PWA works offline with on-device danger-sign rules and an encrypted outbox, syncs to a Cloud Run API that uses Gemini on Vertex AI for a structured, cited summary, stores data in Firestore and Cloud Storage, logs to Cloud Logging, exports de-identified analytics to BigQuery, and serves a doctor review console.</desc>
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#44474f"/></marker>
+    <style>
+      text { font-family: Roboto, "Segoe UI", Arial, sans-serif; fill: #1a1b20; }
+      .h1 { font-size: 32px; font-weight: 500; }
+      .sub { font-size: 16px; fill: #44474f; }
+      .col { font-size: 18px; font-weight: 500; }
+      .lbl { font-size: 15px; font-weight: 500; }
+      .txt { font-size: 13px; fill: #44474f; }
+      .flow { fill: none; stroke: #44474f; stroke-width: 2; marker-end: url(#a); }
+      .dash { stroke-dasharray: 6 5; }
+    </style>
+  </defs>
+  <rect width="1600" height="980" fill="#faf8ff"/>
+  <text x="48" y="58" class="h1">Aarogya-Vision · architecture</text>
+  <text x="48" y="88" class="sub">Google AI + Google Cloud only. Prototype for synthetic cases. The doctor makes every clinical decision.</text>
+
+  <!-- Columns -->
+  <rect x="40" y="116" width="340" height="640" rx="16" fill="#dae2ff"/>
+  <rect x="404" y="116" width="560" height="640" rx="16" fill="#f3f3fd"/>
+  <rect x="988" y="116" width="572" height="640" rx="16" fill="#e8f5ee"/>
+  <text x="64" y="152" class="col" fill="#0040a1">ASHA worker phone (PWA)</text>
+  <text x="428" y="152" class="col">Cloud Run · asia-south1</text>
+  <text x="1012" y="152" class="col" fill="#005237">Google Cloud data + doctor</text>
+
+  <!-- Phone -->
+  <rect x="60" y="172" width="300" height="104" rx="12" fill="#fff"/>
+  <text x="78" y="198" class="lbl">One-screen capture (Material 3)</text>
+  <text x="78" y="222" class="txt">Take photo and/or Speak (en, hi, ta).</text>
+  <text x="78" y="242" class="txt">Consent switch, optional danger switch.</text>
+  <text x="78" y="262" class="txt">No form: AI fills the fields.</text>
+
+  <rect x="60" y="292" width="300" height="104" rx="12" fill="#fff"/>
+  <text x="78" y="318" class="lbl">Works offline</text>
+  <text x="78" y="342" class="txt">Danger switch gives "refer now" instantly.</text>
+  <text x="78" y="362" class="txt">Danger-sign reminder shown while offline.</text>
+  <text x="78" y="382" class="txt">Never waits for AI to advise referral.</text>
+
+  <rect x="60" y="412" width="300" height="104" rx="12" fill="#fff"/>
+  <text x="78" y="438" class="lbl">Encrypted outbox</text>
+  <text x="78" y="462" class="txt">AES-GCM, non-extractable key, IndexedDB.</text>
+  <text x="78" y="482" class="txt">Service worker app shell. Auto-sync with</text>
+  <text x="78" y="502" class="txt">idempotent retries when online.</text>
+
+  <rect x="60" y="532" width="300" height="104" rx="12" fill="#fff"/>
+  <text x="78" y="558" class="lbl">Doctor's reply</text>
+  <text x="78" y="582" class="txt">Outcome and instructions, machine-translated</text>
+  <text x="78" y="602" class="txt">by Gemini, with the doctor's original text</text>
+  <text x="78" y="622" class="txt">always shown below.</text>
+
+  <!-- Cloud Run -->
+  <rect x="424" y="172" width="520" height="84" rx="12" fill="#fff"/>
+  <text x="442" y="198" class="lbl">API (Node.js) · auth, CSP, validation</text>
+  <text x="442" y="222" class="txt">Signed role tokens, consent required, strict schema (zod), file-type checks,</text>
+  <text x="442" y="242" class="txt">server recomputes triage. Images built by Cloud Build, stored in Artifact Registry.</text>
+
+  <rect x="424" y="272" width="250" height="170" rx="12" fill="#fff"/>
+  <text x="442" y="298" class="lbl">1. Read + fill fields</text>
+  <text x="442" y="322" class="txt">Gemini on Vertex AI reads photo</text>
+  <text x="442" y="342" class="txt">and voice together. Fills age, sex,</text>
+  <text x="442" y="362" class="txt">temperature, breaths, signs present</text>
+  <text x="442" y="382" class="txt">or absent; transcript, questions.</text>
+  <text x="442" y="402" class="txt">Gaps only, range-checked, tagged.</text>
+  <text x="442" y="422" class="txt">Safety blocks fall back to humans.</text>
+
+  <rect x="694" y="272" width="250" height="170" rx="12" fill="#fff"/>
+  <text x="712" y="298" class="lbl">2. Find guideline</text>
+  <text x="712" y="322" class="txt">Curated WHO / MoHFW corpus.</text>
+  <text x="712" y="342" class="txt">Deterministic retrieval by danger</text>
+  <text x="712" y="362" class="txt">sign, each with its source.</text>
+
+  <rect x="424" y="458" width="250" height="150" rx="12" fill="#fff"/>
+  <text x="442" y="484" class="lbl">3. Flag urgency</text>
+  <text x="442" y="508" class="txt">Same rules as the phone.</text>
+  <text x="442" y="528" class="txt">AI can raise, never lower.</text>
+  <text x="442" y="548" class="txt">Photo-only AI findings capped</text>
+  <text x="442" y="568" class="txt">at "review today", marked verify.</text>
+
+  <rect x="694" y="458" width="250" height="150" rx="12" fill="#fff"/>
+  <text x="712" y="484" class="lbl">4. Build record</text>
+  <text x="712" y="508" class="txt">Structured case with AI output,</text>
+  <text x="712" y="528" class="txt">model and prompt version,</text>
+  <text x="712" y="548" class="txt">citations and history.</text>
+
+  <rect x="424" y="624" width="520" height="112" rx="12" fill="#fff"/>
+  <text x="442" y="650" class="lbl">Secret Manager · least-privilege service account</text>
+  <text x="442" y="674" class="txt">Session secret, access codes and analytics salt are never in source.</text>
+  <text x="442" y="694" class="txt">Production refuses mock AI and demo codes. Cases purged after 30 days.</text>
+  <text x="442" y="714" class="txt">Agent Skills (.agents/skills) guide Antigravity agents working on the code.</text>
+
+  <!-- Data + doctor -->
+  <rect x="1008" y="172" width="260" height="104" rx="12" fill="#fff"/>
+  <text x="1026" y="198" class="lbl">Firestore</text>
+  <text x="1026" y="222" class="txt">Case records, transactional</text>
+  <text x="1026" y="242" class="txt">updates (asia-south1)</text>
+
+  <rect x="1284" y="172" width="260" height="104" rx="12" fill="#fff"/>
+  <text x="1302" y="198" class="lbl">Cloud Storage</text>
+  <text x="1302" y="222" class="txt">Private bucket for photos and</text>
+  <text x="1302" y="242" class="txt">voice notes, 30-day lifecycle</text>
+
+  <rect x="1008" y="292" width="260" height="104" rx="12" fill="#fff"/>
+  <text x="1026" y="318" class="lbl">Cloud Logging</text>
+  <text x="1026" y="342" class="txt">Audit trail: logins, views, AI</text>
+  <text x="1026" y="362" class="txt">output hashes, decisions</text>
+
+  <rect x="1284" y="292" width="260" height="104" rx="12" fill="#fff"/>
+  <text x="1302" y="318" class="lbl">BigQuery + data agent</text>
+  <text x="1302" y="342" class="txt">De-identified triage events for</text>
+  <text x="1302" y="362" class="txt">district Conversational Analytics</text>
+
+  <rect x="1008" y="412" width="536" height="324" rx="12" fill="#fff"/>
+  <text x="1026" y="440" class="lbl">Doctor console (Material 3 list-detail)</text>
+  <text x="1026" y="466" class="txt">Queue sorted urgent first, new-urgent alert, polling every 10 seconds.</text>
+  <text x="1026" y="490" class="txt">Photo and voice note, AI summary and transcript labelled "AI-generated",</text>
+  <text x="1026" y="514" class="txt">reasons with source and "verify" tags, checklist, cited guidelines.</text>
+  <text x="1026" y="546" class="lbl">Doctor decides</text>
+  <text x="1026" y="570" class="txt">Refer now, home care with follow-up, need more information, or no action,</text>
+  <text x="1026" y="594" class="txt">with free-text instructions and an optional follow-up date.</text>
+  <text x="1026" y="618" class="txt">Preview shows exactly what the ASHA will see.</text>
+
+  <!-- Flows -->
+  <path d="M360 464 H414 V214 H424" class="flow"/>
+  <text x="366" y="456" class="txt">sync</text>
+  <path d="M674 357 H694" class="flow"/>
+  <path d="M549 442 V458" class="flow"/>
+  <path d="M674 533 H694" class="flow"/>
+  <path d="M944 533 H976 V224 H1008" class="flow"/>
+  <path d="M944 190 H960 V164 H1414 V172" class="flow dash"/>
+  <path d="M1138 276 V292" class="flow dash"/>
+  <path d="M1268 344 H1284" class="flow dash"/>
+  <path d="M1276 276 V412" class="flow"/>
+  <path d="M1008 700 H976 V746 H392 V584 H360" class="flow dash"/>
+  <text x="500" y="770" class="txt">decision + translated instructions returned to the ASHA on next sync</text>
+
+  <!-- Safety strip -->
+  <rect x="40" y="788" width="1520" height="152" rx="16" fill="#fff" stroke="#c4c6d0"/>
+  <text x="64" y="824" class="col">Safety design</text>
+  <text x="64" y="856" class="txt">Gemini API terms prohibit clinical-practice use: labelled prototype, synthetic cases only. Google's Generative AI policy requires human supervision for healthcare decisions: the doctor decides.</text>
+  <text x="64" y="880" class="txt">Deterministic, published danger-sign rules set the floor; AI only documents, cites and can raise urgency. Prompt forbids diagnosis and prescriptions and ignores instructions inside inputs.</text>
+  <text x="64" y="904" class="txt">Data minimisation: no names sent to Gemini, EXIF stripped, audit and analytics hold IDs and hashes only, encrypted on the phone and at rest in Google Cloud, 30-day retention, data kept in asia-south1.</text>
+  <text x="64" y="928" class="txt">Verified by 55 unit and API tests, a 21-case safety evaluation (zero under-triage), and a Playwright end-to-end test of the offline-to-doctor loop with CSP violation checks.</text>
+</svg>

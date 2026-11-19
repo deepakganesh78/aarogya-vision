@@ -1,0 +1,26 @@
+Case context (from the worker's app; most fields are usually empty because the worker only took a photo and/or spoke):
+- Age: 8 days
+- Sex: female
+- Worker's language: Tamil (write follow_up_questions.worker_language in Tamil)
+- Measured axillary temperature: not entered
+- Breaths counted in one minute: not entered
+- Worker's typed notes: "Red skin around the navel. Mother says the baby is not feeding and feels hot."
+- Worker tapped "I see a danger sign": no
+
+Checklist answers (yes / no / unknown = not checked):
+- not_feeding_well (Not able to feed, or stopped feeding well (not sucking)): yes
+- convulsions (Convulsions (fits)): unknown
+- fast_breathing (Fast breathing (60 or more breaths in one minute)): unknown
+- severe_chest_indrawing (Severe chest indrawing): unknown
+- fever (Fever: 37.5 °C or above, or feels hot): unknown
+- low_temperature (Low body temperature: below 35.5 °C, or feels cold): unknown
+- low_movement (Moves only when stimulated, or does not move at all): unknown
+- umbilical_redness_spreading (Redness around the navel spreading to the skin): unknown
+- umbilicus_red_or_pus (Navel red or draining pus (redness not spreading)): unknown
+- many_skin_pustules (10 or more skin pustules, or a big boil): unknown
+- few_skin_pustules (A few skin pustules (fewer than 10)): unknown
+- severe_jaundice (Yellow palms and soles, or yellow skin in the first 24 hours of life): unknown
+- jaundice (Yellow eyes or skin (palms and soles not yellow)): unknown
+
+Attachments: one photo; one voice note.
+Produce the JSON described by the response schema.

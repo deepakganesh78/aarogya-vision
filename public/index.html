@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0056d2" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Aarogya-Vision · ASHA</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/vendor/theme.css" />
+    <link rel="stylesheet" href="/vendor/fonts.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="modulepreload" href="/vendor/material.js" />
+    <script type="module" src="/js/worker-app.js"></script>
+  </head>
+  <body class="worker">
+    <header class="top-app-bar">
+      <div class="top-app-bar__brand">
+        <md-icon data-icon="child_care" data-filled></md-icon>
+        <span class="top-app-bar__title md-typescale-title-large" data-i18n="app_name"></span>
+      </div>
+      <span id="net-status" class="status-pill" role="status"><md-icon data-icon="cloud_done"></md-icon><span id="net-text"></span></span>
+      <span class="menu-anchor">
+        <md-icon-button id="lang-button" data-i18n-aria="language"><md-icon data-icon="translate"></md-icon></md-icon-button>
+        <md-menu id="lang-menu" anchor="lang-button" positioning="popover"></md-menu>
+      </span>
+      <md-icon-button id="sign-out" data-i18n-aria="sign_out" hidden><md-icon data-icon="logout"></md-icon></md-icon-button>
+    </header>
+    <div class="banner md-typescale-body-medium" role="note">
+      <md-icon data-icon="info"></md-icon>
+      <span data-i18n="prototype_banner"></span>
+    </div>
+    <div id="offline-banner" class="banner banner--warning md-typescale-body-medium" role="status" hidden>
+      <md-icon data-icon="cloud_off"></md-icon>
+      <span data-i18n="offline"></span>
+    </div>
+
+    <main>
+      <!-- Sign in -->
+      <section id="view-login" class="view login" hidden>
+        <div class="login__intro">
+          <md-icon data-icon="child_care" data-filled></md-icon>
+          <h1 class="md-typescale-headline-medium" data-i18n="login_title"></h1>
+          <p class="md-typescale-body-large on-surface-variant" data-i18n="tagline"></p>
+        </div>
+        <md-outlined-card class="card">
+          <form id="login-form" class="card-body">
+            <md-outlined-text-field id="access-code" data-i18n-label="access_code" autocomplete="off" autocapitalize="off" spellcheck="false" required></md-outlined-text-field>
+            <p id="login-error" class="error-text md-typescale-body-medium" role="alert" hidden></p>
+            <div class="row">
+              <md-filled-button id="login-submit" type="submit"><md-icon slot="icon" data-icon="lock"></md-icon><span data-i18n="sign_in"></span></md-filled-button>
+            </div>
+          </form>
+        </md-outlined-card>
+      </section>
+
+      <!-- Home: my visits -->
+      <section id="view-home" class="view" hidden>
+        <div class="section-header">
+          <div class="stack-sm">
+            <h1 id="my-cases-heading" class="md-typescale-headline-small" data-i18n="my_cases"></h1>
+            <p id="user-name" class="md-typescale-body-medium on-surface-variant"></p>
+          </div>
+          <md-text-button id="sync-now"><md-icon slot="icon" data-icon="sync"></md-icon><span data-i18n="sync_now"></span></md-text-button>
+        </div>
+        <md-linear-progress id="sync-progress" indeterminate hidden></md-linear-progress>
+        <md-list id="case-list" class="case-list" aria-labelledby="my-cases-heading"></md-list>
+        <div id="empty-state" class="empty-state" hidden>
+          <md-icon data-icon="inbox"></md-icon>
+          <p class="md-typescale-title-medium" data-i18n="no_cases"></p>
+          <p class="md-typescale-body-medium" data-i18n="no_cases_help"></p>
+        </div>
+        <md-fab id="new-visit" class="fab" variant="primary" data-i18n-label="new_visit"><md-icon slot="icon" data-icon="add"></md-icon></md-fab>
+      </section>
+
+      <!-- New visit: photo and/or voice, consent, send -->
+      <section id="view-capture" class="view capture" hidden>
+        <div class="page-header">
+          <md-icon-button id="cancel-capture" data-i18n-aria="cancel"><md-icon data-icon="close"></md-icon></md-icon-button>
+          <h1 class="md-typescale-title-large" data-i18n="new_visit"></h1>
+        </div>
+        <p class="md-typescale-body-large" data-i18n="capture_hint"></p>
+
+        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden />
+        <div class="capture-tiles">
+          <button id="take-photo" class="capture-tile" type="button">
+            <md-focus-ring></md-focus-ring><md-ripple></md-ripple>
+            <md-icon data-icon="photo_camera"></md-icon>
+            <span id="take-photo-label" class="md-typescale-title-medium" data-i18n="take_photo"></span>
+          </button>
+          <button id="record" class="capture-tile" type="button">
+            <md-focus-ring></md-focus-ring><md-ripple></md-ripple>
+            <md-icon id="record-icon" data-icon="mic"></md-icon>
+            <span id="record-label" class="md-typescale-title-medium" data-i18n="speak"></span>
+            <span id="record-timer" class="md-typescale-label-large" role="status"></span>
+          </button>
+        </div>
+        <md-linear-progress id="record-progress" value="0" hidden></md-linear-progress>
+        <p class="tip md-typescale-body-medium on-surface-variant"><md-icon data-icon="mic"></md-icon><span data-i18n="voice_tip"></span></p>
+        <p id="mic-error" class="error-text md-typescale-body-medium" data-i18n="mic_unavailable" hidden></p>
+
+        <md-outlined-card id="attachments" class="card" hidden>
+          <md-list class="attachments">
+            <md-list-item id="photo-item" hidden>
+              <img id="photo-preview" slot="start" class="thumb" alt="" />
+              <div slot="headline" data-i18n="photo"></div>
+              <md-icon-button id="remove-photo" slot="end" data-i18n-aria="remove"><md-icon data-icon="delete"></md-icon></md-icon-button>
+            </md-list-item>
+            <md-list-item id="audio-item" hidden>
+              <span slot="start" class="thumb thumb--icon"><md-icon data-icon="graphic_eq"></md-icon></span>
+              <div slot="headline" data-i18n="voice_note"></div>
+              <div slot="supporting-text" id="audio-duration"></div>
+              <md-icon-button id="remove-audio" slot="end" data-i18n-aria="remove"><md-icon data-icon="delete"></md-icon></md-icon-button>
+            </md-list-item>
+          </md-list>
+          <audio id="audio-preview" class="audio-preview" controls hidden></audio>
+        </md-outlined-card>
+
+        <div class="row">
+          <md-text-button id="type-instead" type="button"><md-icon slot="icon" data-icon="chat"></md-icon><span data-i18n="type_instead"></span></md-text-button>
+        </div>
+        <md-outlined-text-field id="notes" type="textarea" rows="3" maxlength="1000" data-i18n-label="notes_label" hidden></md-outlined-text-field>
+
+        <md-outlined-card class="card">
+          <div class="switch-list">
+            <label class="switch-row">
+              <md-icon data-icon="verified_user"></md-icon>
+              <span class="md-typescale-body-large" data-i18n="consent_short"></span>
+              <md-switch id="consent" icons></md-switch>
+            </label>
+            <md-divider></md-divider>
+            <label class="switch-row switch-row--danger">
+              <md-icon data-icon="warning"></md-icon>
+              <span class="md-typescale-body-large" data-i18n="danger_flag"></span>
+              <md-switch id="danger-flag" icons></md-switch>
+            </label>
+            <div class="row">
+              <md-text-button id="show-danger-signs" type="button"><md-icon slot="icon" data-icon="info"></md-icon><span data-i18n="danger_flag_help"></span></md-text-button>
+            </div>
+            <div id="danger-signs-list" hidden></div>
+          </div>
+        </md-outlined-card>
+
+        <div id="capture-error" class="error-banner md-typescale-body-medium" role="alert" hidden></div>
+
+        <div class="bottom-bar">
+          <md-filled-button id="send-case" class="send-button" type="button"><md-icon slot="icon" data-icon="send"></md-icon><span data-i18n="send_to_doctor"></span></md-filled-button>
+        </div>
+      </section>
+
+      <!-- Result after sending -->
+      <section id="view-result" class="view stack" hidden>
+        <div id="result-card" class="stack"></div>
+        <div class="row">
+          <md-filled-button id="result-done" data-i18n="done"></md-filled-button>
+        </div>
+      </section>
+
+      <!-- Visit detail -->
+      <section id="view-case" class="view" hidden>
+        <div class="page-header">
+          <md-icon-button id="case-back" data-i18n-aria="back"><md-icon data-icon="arrow_back"></md-icon></md-icon-button>
+          <h1 class="md-typescale-title-large" data-i18n="my_cases"></h1>
+        </div>
+        <div id="case-detail" class="stack"></div>
+      </section>
+    </main>
+  </body>
+</html>

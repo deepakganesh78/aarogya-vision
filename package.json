@@ -1,0 +1,43 @@
+{
+  "name": "aarogya-vision",
+  "version": "0.1.0",
+  "description": "Photo + voice intake for ASHA workers with guideline-grounded triage and doctor review, built on Gemini and Google Cloud (prototype).",
+  "main": "src/server.js",
+  "scripts": {
+    "build": "node scripts/build-ui.mjs",
+    "start": "node src/server.js",
+    "predev": "npm run build",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "playwright test",
+    "eval": "node eval/run-eval.js",
+    "prompt:export": "node scripts/export-prompt.mjs"
+  },
+  "type": "module",
+  "dependencies": {
+    "@google-cloud/bigquery": "^9.6.1",
+    "@google-cloud/firestore": "^9.4.1",
+    "@google-cloud/storage": "^9.0.0",
+    "@google/genai": "^3.6.1",
+    "@material/web": "^2.5.0",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.5.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fontsource/noto-sans-devanagari": "^5.3.0",
+    "@fontsource/noto-sans-tamil": "^5.3.0",
+    "@fontsource/roboto": "^5.3.0",
+    "@material-symbols/svg-400": "^0.49.0",
+    "@material/material-color-utilities": "^0.4.0",
+    "@playwright/test": "^1.65.1",
+    "esbuild": "^0.28.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "UNLICENSED"
+}

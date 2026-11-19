@@ -1,0 +1,14 @@
+{
+  "name": "Aarogya-Vision (ASHA)",
+  "short_name": "Aarogya-Vision",
+  "description": "Home-visit intake for young infants: checklist, photo and voice note for doctor review. Prototype.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#0b5cab",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
