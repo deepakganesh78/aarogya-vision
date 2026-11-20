@@ -42,6 +42,8 @@ export async function startRecording({ maxMs = 120_000, onTick } = {}) {
   recorder.start(1000);
 
   return {
+    // The live microphone stream, so live speech-to-text can listen to the same audio.
+    stream,
     stop() {
       clearInterval(ticker);
       clearTimeout(limit);

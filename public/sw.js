@@ -1,6 +1,6 @@
 // Offline app shell for the ASHA worker app. API calls (health data) are never cached here;
 // unsent cases live encrypted in IndexedDB instead.
-const CACHE = 'av-shell-v2';
+const CACHE = 'av-shell-v5';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,8 @@ const SHELL = [
   '/js/i18n.js',
   '/js/secure-store.js',
   '/js/media.js',
+  '/js/live-speech.js',
+  '/js/pcm-worklet.js',
   '/js/dom.js',
   '/js/icons.js',
   '/shared/dangerSigns.js',

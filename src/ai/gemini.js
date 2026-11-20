@@ -32,10 +32,38 @@ async function withTimeout(timeoutMs, fn) {
   }
 }
 
+// Temporary or model-specific failures (overloaded, rate-limited, model not found): try the next model.
+function isRetryable(err) {
+  // A model that does not answer in time is treated like an overloaded one.
+  if (err?.name === 'AbortError') return true;
+  const text = String(err?.message || err);
+  const status = err?.status ?? err?.code;
+  return [404, 429, 500, 503].includes(Number(status)) || /(404|429|500|503)|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|not found/i.test(text);
+}
+
 /** @param {{config: object, client?: {models: {generateContent: Function}}}} options */
 export function createGeminiProvider({ config, client }) {
   const ai = client || createClient(config);
-  const model = config.model;
+  // GEMINI_MODEL may list fallbacks: "gemini-3.8-flash,gemini-flash-latest". The first that answers is used.
+  const models = String(config.model || '')
+    .split(',')
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const model = models[0];
+
+  async function generate(request) {
+    let lastError;
+    for (const m of models) {
+      try {
+        const response = await withTimeout(config.timeoutMs, (abortSignal) => ai.models.generateContent({ ...request, model: m, config: { ...request.config, abortSignal } }));
+        return { response, model: m };
+      } catch (err) {
+        lastError = err;
+        if (!isRetryable(err)) throw err;
+      }
+    }
+    throw lastError;
+  }
 
   async function analyze({ caseRecord, photo, audio }) {
     const parts = [{ text: buildUserPrompt(caseRecord, { hasPhoto: Boolean(photo), hasAudio: Boolean(audio) }) }];
@@ -48,34 +76,27 @@ export function createGeminiProvider({ config, client }) {
       parts.push({ inlineData: { mimeType: audio.mimeType, data: audio.buffer.toString('base64') } });
     }
 
-    const response = await withTimeout(config.timeoutMs, (abortSignal) =>
-      ai.models.generateContent({
-        model,
-        contents: [{ role: 'user', parts }],
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseMimeType: 'application/json',
-          responseJsonSchema: AI_OUTPUT_JSON_SCHEMA,
-          temperature: 0.1,
-          abortSignal
-        }
-      })
-    );
+    const { response, model: used } = await generate({
+      contents: [{ role: 'user', parts }],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: 'application/json',
+        responseJsonSchema: AI_OUTPUT_JSON_SCHEMA,
+        temperature: 0.1
+      }
+    });
 
     assertNotBlocked(response);
     const text = response?.text;
     if (!text) throw new Error('model returned an empty response');
-    return { raw: text, output: parseAiOutput(text) };
+    return { raw: text, output: parseAiOutput(text), model: used };
   }
 
   async function translate(text, lang) {
-    const response = await withTimeout(config.timeoutMs, (abortSignal) =>
-      ai.models.generateContent({
-        model,
-        contents: [{ role: 'user', parts: [{ text }] }],
-        config: { systemInstruction: buildTranslationInstruction(lang), temperature: 0, abortSignal }
-      })
-    );
+    const { response } = await generate({
+      contents: [{ role: 'user', parts: [{ text }] }],
+      config: { systemInstruction: buildTranslationInstruction(lang), temperature: 0 }
+    });
     assertNotBlocked(response);
     const out = response?.text?.trim();
     if (!out) throw new Error('model returned an empty translation');

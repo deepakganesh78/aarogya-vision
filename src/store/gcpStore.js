@@ -1,3 +1,5 @@
+import { findAsha, findDoctor, PEOPLE } from '../patients.js';
+
 const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function assertId(id) {
@@ -7,6 +9,8 @@ function assertId(id) {
 // Production store: case records in Firestore, photos and voice notes in a private Cloud Storage bucket.
 // Both encrypt data at rest by default; deploy them in asia-south1 to keep data in India.
 export class GcpStore {
+  name = 'gcp';
+
   /**
    * @param {{firestore: import('@google-cloud/firestore').Firestore, storage: import('@google-cloud/storage').Storage, bucketName: string, collection?: string}} options
    */
@@ -14,6 +18,7 @@ export class GcpStore {
     if (!bucketName) throw new Error('MEDIA_BUCKET is required for STORE=gcp');
     this.firestore = firestore;
     this.collection = firestore.collection(collection);
+    this.patients = firestore.collection('patients');
     this.bucket = storage.bucket(bucketName);
   }
 
@@ -88,5 +93,43 @@ export class GcpStore {
     assertId(id);
     await this.bucket.deleteFiles({ prefix: `cases/${id}/` });
     await this.collection.doc(id).delete();
+  }
+
+  async listByPatient(patientId) {
+    const snap = await this.collection.where('patient.id', '==', patientId).limit(200).get();
+    return snap.docs.map((d) => d.data()).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+  }
+
+  async getPatient(id) {
+    const snap = await this.patients.doc(id).get();
+    return snap.exists ? snap.data() : null;
+  }
+
+  async findPatientByKey(key) {
+    if (!key) return null;
+    const snap = await this.patients.where('matchKey', '==', key).limit(1).get();
+    return snap.docs[0]?.data() || null;
+  }
+
+  async putPatient(p) {
+    await this.patients.doc(p.id).set(p);
+    return p;
+  }
+
+  async listPatientsByWorker(workerId) {
+    const snap = await this.patients.where('workerId', '==', workerId).limit(1000).get();
+    return snap.docs.map((d) => d.data()).sort((a, b) => String(b.lastSeen).localeCompare(String(a.lastSeen)));
+  }
+
+  async getAsha(id) {
+    return findAsha(id);
+  }
+
+  async listAshas() {
+    return PEOPLE.ashas;
+  }
+
+  async getDoctor(id) {
+    return findDoctor(id);
   }
 }

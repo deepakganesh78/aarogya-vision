@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { SIGN_IDS } from '../../public/shared/dangerSigns.js';
 
-export const PROMPT_VERSION = 'intake-v2';
+export const PROMPT_VERSION = 'intake-v3-all-ages';
 
 const nullable = (schema) => ({ anyOf: [schema, { type: 'null' }] });
 
@@ -13,7 +13,7 @@ export const AI_OUTPUT_JSON_SCHEMA = {
       type: 'object',
       description: 'Values the worker explicitly states in the voice note or notes. Use null when not stated. Never estimate.',
       properties: {
-        age_days: nullable({ type: 'integer', minimum: 0, maximum: 365, description: 'Age in days (convert weeks or months: 1 week = 7 days, 1 month = 30 days).' }),
+        age_days: nullable({ type: 'integer', minimum: 0, maximum: 43800, description: 'Age in days (convert: 1 week = 7 days, 1 month = 30 days, 1 year = 365 days).' }),
         sex: { type: 'string', enum: ['female', 'male', 'unknown'] },
         temperature_c: nullable({ type: 'number', minimum: 25, maximum: 45, description: 'Measured temperature in °C (convert °F).' }),
         breaths_per_min: nullable({ type: 'integer', minimum: 0, maximum: 200 })
@@ -81,7 +81,7 @@ const Finding = z.object({
 
 const Reported = z
   .object({
-    age_days: z.number().int().min(0).max(365).nullable().catch(null).default(null),
+    age_days: z.number().int().min(0).max(43800).nullable().catch(null).default(null),
     sex: z.enum(['female', 'male', 'unknown']).catch('unknown').default('unknown'),
     temperature_c: z.number().min(25).max(45).nullable().catch(null).default(null),
     breaths_per_min: z.number().int().min(0).max(200).nullable().catch(null).default(null)

@@ -12,18 +12,20 @@ function inRange(value, min, max, integer = false) {
 export function applyAutofill(submitted = {}, aiOutput = null) {
   const sp = submitted.patient || {};
   const sa = submitted.assessment || {};
-  const patient = { ageDays: sp.ageDays ?? null, sex: sp.sex || 'unknown', ...(sp.reference ? { reference: sp.reference } : {}) };
+  // Keep everything the worker entered about the patient (name, age, pregnancy) as it is.
+  const patient = { ...sp, ageDays: sp.ageDays ?? null, sex: sp.sex || 'unknown' };
   const assessment = {
     signs: { ...(sa.signs || {}) },
     temperatureC: sa.temperatureC ?? null,
     breathsPerMin: sa.breathsPerMin ?? null,
     ...(sa.notes ? { notes: sa.notes } : {}),
+    ...(sa.liveTranscript ? { liveTranscript: sa.liveTranscript } : {}),
     ...(sa.workerFlag ? { workerFlag: true } : {})
   };
   const autofill = {};
   const r = aiOutput?.reported;
   if (r) {
-    if (patient.ageDays === null && inRange(r.ageDays, 0, 365, true)) {
+    if (patient.ageDays === null && inRange(r.ageDays, 0, 43800, true)) {
       patient.ageDays = r.ageDays;
       autofill.ageDays = 'ai_voice';
     }

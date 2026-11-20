@@ -20,11 +20,19 @@ export const CaseSubmission = z
       .strict(),
     patient: z
       .object({
-        ageDays: z.number().int().min(0).max(365).nullable().optional(),
+        // Existing patient picked from the worker's list. A new patient has no id yet; the server assigns one.
+        id: z.string().regex(/^PT-[0-9A-F]{8}$/).optional(),
+        name: z.string().trim().min(1).max(80).optional(),
+        ageValue: z.number().min(0).max(120).nullable().optional(),
+        ageUnit: z.enum(['days', 'weeks', 'months', 'years']).optional(),
+        ageDays: z.number().int().min(0).max(43800).nullable().optional(),
         sex: z.enum(['female', 'male', 'unknown']).optional(),
+        pregnant: z.boolean().optional(),
+        pregnancyMonths: z.number().int().min(1).max(10).nullable().optional(),
         reference: z.string().trim().max(40).optional()
       })
       .strict()
+      .refine((p) => !p.pregnant || p.sex === 'female', { message: 'only a female patient can be pregnant', path: ['pregnant'] })
       .optional(),
     assessment: z
       .object({
@@ -32,7 +40,18 @@ export const CaseSubmission = z
         temperatureC: z.number().min(25).max(45).nullable().optional(),
         breathsPerMin: z.number().int().min(0).max(200).nullable().optional(),
         notes: z.string().max(1000).optional(),
-        workerFlag: z.boolean().optional()
+        workerFlag: z.boolean().optional(),
+        // Live speech-to-text made on the phone while the worker spoke (Sarvam, local testing only).
+        liveTranscript: z
+          .object({
+            original: z.string().max(4000),
+            english: z.string().max(4000),
+            language: z.string().max(20).nullable().optional(),
+            provider: z.literal('sarvam'),
+            model: z.string().max(40).nullable().optional()
+          })
+          .strict()
+          .optional()
       })
       .strict()
       .optional(),

@@ -23,7 +23,8 @@ const ICONS = [
   'add', 'arrow_back', 'star_shine', 'chat', 'check_circle', 'child_care', 'close', 'cloud_done', 'cloud_off', 'cloud_upload',
   'delete', 'error', 'fact_check', 'graphic_eq', 'history', 'image', 'inbox', 'info', 'lock', 'logout', 'medical_information',
   'menu_book', 'mic', 'person', 'photo_camera', 'refresh', 'schedule', 'send', 'stethoscope', 'stop', 'sync', 'translate',
-  'verified_user', 'warning'
+  'verified_user', 'warning', 'person_add', 'search', 'pregnant_woman', 'volume_up', 'repeat', 'location_on', 'local_hospital',
+  'download', 'groups', 'timer', 'today', 'edit', 'badge', 'stop_circle'
 ];
 
 async function buildTheme() {

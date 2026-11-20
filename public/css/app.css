@@ -244,3 +244,79 @@ a { color: var(--md-sys-color-primary); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Patient register, profile card, worker steps */
+.stack-xs { display: grid; gap: 2px; }
+.profile { grid-template-columns: 48px 1fr; align-items: center; gap: 16px; }
+.profile__avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.profile-card { margin-bottom: 8px; }
+.age-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.age-row > * { min-width: 0; }
+.patient-chip { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; padding: 12px 8px 12px 16px; border-radius: 12px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.patient-chip md-icon { color: var(--md-sys-color-on-secondary-container); }
+.patient-chip .on-surface-variant { color: var(--md-sys-color-on-secondary-container); opacity: 0.85; }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; font: 500 12px/16px var(--md-ref-typeface-plain); background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); vertical-align: middle; }
+.badge md-icon { --md-icon-size: 14px; }
+.badge--neutral { background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+.flip { transform: scaleX(-1); }
+.steps { margin: 0; padding-left: 24px; display: grid; gap: 8px; }
+.steps li { padding-left: 4px; }
+
+/* Doctor dashboard: KPIs, filters, patient history */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { border-radius: 12px; padding: 14px 16px; background: var(--md-sys-color-surface-container); display: grid; gap: 2px; }
+.kpi__value { font: 500 28px/36px var(--md-ref-typeface-brand, var(--md-ref-typeface-plain)); }
+.kpi__label { color: var(--md-sys-color-on-surface-variant); }
+.kpi--urgent { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+.kpi--urgent .kpi__label { color: inherit; opacity: 0.85; }
+.queue-filters { display: grid; gap: 8px; padding: 12px 0 4px; }
+.queue-filters md-outlined-text-field { width: 100%; }
+.history-list { display: grid; gap: 8px; }
+.history-item { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--md-sys-color-surface-container); }
+.history-item.current { outline: 2px solid var(--md-sys-color-primary); }
+.history-item__body { display: grid; gap: 2px; }
+.status-pill.live { background: var(--app-color-success-container); color: var(--app-color-on-success-container); }
+.badges { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: 4px; }
+
+/* Live speech-to-text box (Sarvam, local testing) */
+.live-box .card-body { gap: 8px; }
+.live-text { margin: 0; white-space: pre-wrap; min-height: 1.5em; }
+.live-text.interim { opacity: 0.7; }
+
+/* Patient details on the visit screen */
+.suggestions { padding: 0; border-radius: 12px; background: var(--md-sys-color-surface-container); }
+.suggestions md-list-item { --md-list-item-one-line-container-height: 48px; }
+
+/* ---- Compact one-screen visit (fits a 375 x 812 phone without scrolling) ---- */
+.capture { gap: 10px; padding-bottom: 8px; }
+.capture .page-header { margin: -4px 0 -4px -12px; }
+.patient-card .card-body { padding: 10px 12px 12px; gap: 8px; }
+.patient-card .card-head { min-height: 24px; }
+.patient-card .card-title { gap: 8px; --md-icon-size: 20px; }
+.name-wrap { position: relative; }
+.name-wrap md-outlined-text-field { width: 100%; }
+.suggestions { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin-top: 2px; box-shadow: 0 4px 12px rgb(0 0 0 / 0.3); }
+.age-row { grid-template-columns: 1fr 1.2fr; gap: 8px; }
+.age-row:has(#p-months:not([hidden])) { grid-template-columns: 0.7fr 1fr 1.15fr; }
+.sex-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.preg-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; --md-icon-size: 20px; }
+.preg-toggle md-icon { color: var(--md-sys-color-on-surface-variant); }
+.capture md-outlined-text-field, .capture md-outlined-select { --md-outlined-field-top-space: 10px; --md-outlined-field-bottom-space: 10px; min-width: 0; }
+.capture-tiles { gap: 10px; }
+.capture-tile { min-height: 64px; grid-auto-flow: column; grid-auto-columns: max-content; justify-content: center; gap: 10px; padding: 10px 12px; border-radius: 14px; --md-icon-size: 28px; }
+.attachments-row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.attachment { display: inline-flex; align-items: center; gap: 2px; padding: 2px 2px 2px 4px; border-radius: 12px; background: var(--md-sys-color-surface-container-high); min-width: 0; }
+.attachment .thumb { width: 40px; height: 40px; }
+.attachment--audio { flex: 1; }
+.attachment--audio .audio-preview { margin: 0; width: 100%; height: 36px; min-width: 0; }
+.live-english { margin-top: -6px; padding: 0 16px; max-height: 3em; overflow: hidden; }
+.switch-list.compact { padding: 0 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; }
+.switch-list.compact .switch-row { min-height: 48px; gap: 12px; grid-template-columns: 20px 1fr auto; --md-icon-size: 20px; }
+.switch-list.compact md-divider { margin: 0 -12px; }
+.danger-label { display: inline-flex; align-items: center; gap: 0; }
+.danger-label label { cursor: pointer; }
+.danger-label md-icon-button { --md-icon-button-icon-size: 18px; --md-icon-button-state-layer-height: 32px; --md-icon-button-state-layer-width: 32px; width: 32px; height: 32px; }
+.send-row { display: flex; justify-content: center; padding-top: 2px; }
+.capture .send-button { width: auto; min-width: 200px; --md-filled-button-container-height: 44px; }
+/* The visit screen has no fixed bottom bar, so it doesn't need the space reserved for one. */
+main:has(> #view-capture:not([hidden])) { padding-bottom: 12px; padding-top: 12px; }

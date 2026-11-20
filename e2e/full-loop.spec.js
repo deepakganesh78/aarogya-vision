@@ -30,7 +30,18 @@ async function readOutbox(page) {
   );
 }
 
-test('ASHA sends only a photo or voice note; AI fills the fields; doctor replies', async ({ browser }) => {
+// Patient details at the top of the visit screen (name, age, sex; pregnancy for women).
+async function fillPatient(page, { name, age, unit, sex }) {
+  await expect(page.locator('#patient-card')).toBeVisible();
+  await page.locator('#p-name input').fill(name);
+  await page.locator('#p-age input').fill(String(age));
+  await page.locator('#p-unit').evaluate((select, value) => {
+    select.value = value;
+  }, unit);
+  await page.locator(`#p-sex md-filter-chip[data-sex="${sex}"]`).click();
+}
+
+test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; doctor replies', async ({ browser }) => {
   const problems = [];
 
   // ---- ASHA worker, phone-sized ----
@@ -55,6 +66,9 @@ test('ASHA sends only a photo or voice note; AI fills the fields; doctor replies
   await worker.locator('md-menu-item[data-lang="ta"]').click();
   await expect.poll(() => worker.locator('#new-visit').evaluate((fab) => fab.label)).toBe('புதிய வருகை');
   await worker.locator('#new-visit').click();
+  await worker.locator('#send-case').click();
+  await expect(worker.locator('#patient-error')).toBeVisible();
+  await fillPatient(worker, { name: 'Baby of Kaveri', age: 8, unit: 'days', sex: 'female' });
   await expect(worker.locator('#take-photo')).toBeVisible();
   await expect(worker.locator('#record')).toBeVisible();
 
@@ -90,6 +104,7 @@ test('ASHA sends only a photo or voice note; AI fills the fields; doctor replies
 
   // ---- Visit 2: online, voice only. AI fills age, temperature and danger signs. ----
   await worker.locator('#new-visit').click();
+  await fillPatient(worker, { name: 'Baby of Lakshmi', age: 8, unit: 'days', sex: 'female' });
   // Consent and the danger switch must never carry over from the previous family's visit.
   expect(await worker.locator('#consent').evaluate((s) => s.selected)).toBe(false);
   expect(await worker.locator('#danger-flag').evaluate((s) => s.selected)).toBe(false);
@@ -107,7 +122,8 @@ test('ASHA sends only a photo or voice note; AI fills the fields; doctor replies
   const result = worker.locator('#result-card');
   await expect(result.locator('h1')).toHaveText('அவசரம்: உடனே பரிந்துரை செய்யவும்', { timeout: 20_000 });
   await expect(result).toContainText('நாங்கள் புரிந்துகொண்டது');
-  await expect(result.locator('.fact').filter({ hasText: '8 நாட்கள்' })).toContainText('குரலிலிருந்து');
+  await expect(result.locator('.patient-chip')).toContainText('Baby of Lakshmi');
+  await expect(result.locator('.fact').filter({ hasText: '8 நாட்கள்' })).toBeVisible();
   await expect(result.locator('.fact').filter({ hasText: '38.3 °C' })).toContainText('குரலிலிருந்து');
   await expect(result.locator('.found-list').first()).toContainText('பால் குடிக்க முடியவில்லை');
   await expect(worker.locator('#delivery-status')).toHaveText('மருத்துவருக்கு அனுப்பப்பட்டது.');
@@ -125,14 +141,15 @@ test('ASHA sends only a photo or voice note; AI fills the fields; doctor replies
   await doctor.locator('#login-submit').click();
 
   await expect(doctor.locator('.queue-item')).toHaveCount(2);
-  await expect(doctor.locator('.queue-item').filter({ hasText: 'age not given' })).toContainText('Urgent');
-  const voiceCase = doctor.locator('.queue-item').filter({ hasText: '8-day-old female' });
+  await expect(doctor.locator('.queue-item').filter({ hasText: 'Baby of Kaveri' })).toContainText('Urgent');
+  const voiceCase = doctor.locator('.queue-item').filter({ hasText: 'Baby of Lakshmi' });
   await expect(voiceCase).toContainText('Urgent');
   await voiceCase.click();
 
   const detail = doctor.locator('#detail');
   await expect(detail).toContainText('[MOCK AI - no model was called]');
-  await expect(detail).toContainText('8 days (voice note, AI)');
+  await expect(detail).toContainText('Baby of Lakshmi, 8 days, female');
+  await expect(detail).toContainText('First visit: no earlier cases for this patient.');
   await expect(detail).toContainText('38.3 °C (voice note, AI)');
   await expect(detail).toContainText('Very severe disease in young infants');
   await expect(detail.locator('.safety-note')).toContainText('You make the clinical decision');
