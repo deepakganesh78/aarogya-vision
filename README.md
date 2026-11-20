@@ -35,7 +35,7 @@ One clinical scenario, end to end: **home visits for young infants (0-59 days)**
 | Need | Google service / tool | Where |
 |---|---|---|
 | Multimodal understanding (photo + voice + form) | **Gemini** via **Vertex AI** in production (`gemini-3.5-flash`, served from asia-south1), Gemini API key in dev | `src/ai/gemini.js`, `src/ai/prompt.js`, `src/ai/schema.js` |
-| Live text and spoken follow-up questions | **Gemini Live API** (`gemini-3.8-live`, Vertex AI asia-south1) through a Cloud Run WebSocket relay | `src/speech/geminiLive.js`, `public/js/live-speech.js` |
+| Live text while she speaks (transcription only, no spoken replies) | **Gemini Live API** (`gemini-3.8-live`, Vertex AI asia-south1) through a Cloud Run WebSocket relay | `src/speech/geminiLive.js`, `public/js/live-speech.js` |
 | Offline danger-sign helper on the phone | **Gemma** 3 1B through **Google AI Edge MediaPipe LLM Inference** (WebGPU). It only suggests signs to check | `public/js/gemma-offline.js`, `public/shared/gemmaPrompt.js` |
 | Guideline passages from the PDFs (RAG) | **Vertex AI RAG Engine** over MoHFW PDFs in Cloud Storage. Supplementary only; the curated citations stay authoritative | `src/rag.js`, `scripts/rag-corpus.mjs`, `deploy/guideline-pdfs.txt` |
 | FHIR R4 case records | **Cloud Healthcare API** FHIR store (asia-south1) | `src/fhir.js`, `src/healthcare.js` |
@@ -66,7 +66,7 @@ No third-party AI, database, hosting, analytics, font or icon services are used 
 - **Data minimisation.** No names go to Gemini (age, sex, checklist, vitals and notes only). The optional reference field is initials only. Re-encoding the photo strips EXIF and GPS data.
 - **Security.** Signed role tokens, strict schema validation, file-type sniffing, and media served only to doctors. Strict CSP (scripts `'self'`; only style attributes inline, which Material Web needs; framing only by our own pages, for the dashboard's demo phone), rate-limited login. Production refuses demo codes and the mock AI provider.
 - **Privacy.** Data is encrypted on the phone, and at rest in Firestore, Cloud Storage and the Cloud Healthcare FHIR store (Google-managed encryption) in asia-south1. Cases, their media and their FHIR resources are purged after 30 days. The audit trail, Pub/Sub events and BigQuery analytics hold IDs, hashes and de-identified fields only. RAG queries carry danger-sign labels only, never notes or patient details.
-- **Gemini Live and Gemma only ask or suggest.** Gemini Live asks at most two spoken follow-up questions, and Gemma (offline) suggests signs to check. Neither answers the checklist or changes urgency.
+- **Gemini Live only transcribes, and Gemma only suggests.** Gemini Live writes down what the worker says, in her language, and never talks back: the relay drops anything the model says. Gemma (offline) suggests signs to check. Neither answers the checklist or changes urgency.
 - **Content review still needed.** The danger-sign wording, guideline corpus and Hindi/Tamil text are **drafts**. They need clinician and native-speaker sign-off.
 
 ## Run locally

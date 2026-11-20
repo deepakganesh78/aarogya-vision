@@ -7,9 +7,9 @@ import { triageAssessment } from '../public/shared/triage.js';
 import { authed, buildCase, startTestServer, submitCase } from './helpers.js';
 
 // A fake Gemini Live session: activity start/end with manual VAD, input transcription while she speaks,
-// then a spoken follow-up question (audio + output transcription) and turnComplete.
+// then the model tries to talk back (audio + output transcription) and completes its turn.
 function fakeLive() {
-  const seen = { audioBytes: 0, inputs: [], lang: null };
+  const seen = { audioBytes: 0, inputs: [], lang: null, closed: false };
   const connect = async ({ lang, callbacks }) => {
     seen.lang = lang;
     setTimeout(() => callbacks.onmessage({ setupComplete: {} }), 0);
@@ -26,7 +26,9 @@ function fakeLive() {
           callbacks.onmessage({ serverContent: { turnComplete: true } });
         }
       },
-      close() {}
+      close() {
+        seen.closed = true;
+      }
     };
   };
   return { seen, connect };
@@ -73,7 +75,7 @@ describe('live speech relay (Gemini Live)', () => {
     }
   });
 
-  it('relays audio to Gemini Live, returns live text, a spoken follow-up and English', async () => {
+  it('relays audio to Gemini Live and returns only her words and English, never the model talking back', async () => {
     const token = await ctx.login('asha-demo');
     const ws = new WebSocket(`${liveUrl(token)}&lang=ta`);
     const messages = [];
@@ -101,9 +103,10 @@ describe('live speech relay (Gemini Live)', () => {
     assert.equal(live.seen.audioBytes, 6400);
     assert.equal(live.seen.inputs[0], 'activityStart');
     assert.ok(live.seen.inputs.includes('activityEnd'));
-    assert.equal(audioFrames, 1, 'spoken follow-up is relayed to the phone');
+    assert.equal(audioFrames, 0, 'no model audio reaches the phone');
     assert.ok(messages.some((m) => m.event === 'partial' && m.stream === 'original'));
-    assert.ok(messages.some((m) => m.event === 'followup' && m.text === 'வலிப்பு உள்ளதா?'));
+    assert.ok(!messages.some((m) => m.event === 'followup' || JSON.stringify(m).includes('வலிப்பு')), 'no model text reaches the phone');
+    assert.ok(live.seen.closed, 'the Gemini Live session is closed once she stops');
     const finals = Object.fromEntries(messages.filter((m) => m.event === 'final').map((m) => [m.stream, m.text]));
     assert.equal(finals.original, 'குழந்தை பால் குடிக்கவில்லை, காய்ச்சல்.');
     assert.equal(finals.english, 'Baby is not feeding and has fever.');

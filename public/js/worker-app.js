@@ -859,7 +859,7 @@ function setRecordingUi(recording) {
   if (recording) $('#record-progress').value = 0;
 }
 
-// ---- Live text and spoken follow-up questions while speaking (Gemini Live) ------------------
+// ---- Live text while speaking (Gemini Live, transcription only) ------------------------------
 
 async function loadAppConfig() {
   try {
@@ -884,7 +884,7 @@ function setLiveLine(text) {
 function setLiveStatus(status) {
   state.capture.liveStatus = status;
   if (status === 'done') return;
-  const text = { connecting: t('live_connecting'), live: t('live_listening'), asking: t('live_asking'), unavailable: t('live_unavailable') }[status] || '';
+  const text = { connecting: t('live_connecting'), live: t('live_listening'), unavailable: t('live_unavailable') }[status] || '';
   setLiveLine(text);
 }
 
@@ -903,7 +903,6 @@ function renderLive(text) {
   }
   const differs = text.english && text.english.trim().toLowerCase() !== (text.original || '').trim().toLowerCase();
   const lines = [];
-  if (text.followUp) lines.push(t('live_followup_prefix', { text: text.followUp }));
   if (differs) lines.push(t('live_english_prefix', { text: text.english }));
   if (!text.interim || lines.length) setLiveLine(lines.join('\n'));
 }
@@ -937,8 +936,7 @@ async function stopLive() {
       english: text.english.slice(0, 4000),
       language: text.language,
       provider: 'gemini-live',
-      model: state.appConfig?.liveSpeech?.model || null,
-      followUp: text.followUp ? text.followUp.slice(0, 1000) : null
+      model: state.appConfig?.liveSpeech?.model || null
     };
     renderLive({ ...text, interim: false });
   } else {
@@ -946,7 +944,7 @@ async function stopLive() {
   }
 }
 
-// The voice note is ready as soon as the recorder stops; the live follow-up and English text arrive after.
+// The voice note is ready as soon as the recorder stops; the final live text and English arrive after.
 async function toggleRecording() {
   if (state.recorder) {
     const current = state.recorder;

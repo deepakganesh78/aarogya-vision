@@ -58,7 +58,7 @@ export function loadConfig(env = process.env) {
   if (provider === 'mock' && isProd) throw new Error('AI_PROVIDER=mock is not allowed in production');
 
   // sqlite = one local database file (default for development); local = JSON files; gcp = Firestore + Cloud Storage.
-  // Live speech while the worker speaks: Gemini Live API (live text + spoken follow-up questions).
+  // Live speech while the worker speaks: Gemini Live API (live text in her language only, no spoken replies).
   const speechProvider = env.SPEECH_PROVIDER || 'none';
   if (!['none', 'gemini-live'].includes(speechProvider)) throw new Error('SPEECH_PROVIDER must be none or gemini-live');
   if (speechProvider === 'gemini-live' && !enterprise && !env.GEMINI_API_KEY) {

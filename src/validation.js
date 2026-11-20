@@ -41,7 +41,8 @@ export const CaseSubmission = z
         breathsPerMin: z.number().int().min(0).max(200).nullable().optional(),
         notes: z.string().max(1000).optional(),
         workerFlag: z.boolean().optional(),
-        // Live text made while the worker spoke (Gemini Live), plus the spoken follow-up questions it asked.
+        // Live text made while the worker spoke (Gemini Live). followUp is accepted only from older app
+        // versions that asked spoken follow-up questions; the current app never sends it.
         liveTranscript: z
           .object({
             original: z.string().max(4000),

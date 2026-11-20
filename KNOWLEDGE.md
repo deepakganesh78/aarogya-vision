@@ -177,7 +177,7 @@ The doctor dashboard. There is no separate console in the main flow: `/doctor` r
 | Need | Google service | Code |
 |---|---|---|
 | Multimodal reading and field filling | Gemini via Vertex AI in production (`gemini-3.5-flash`, served from asia-south1; `gemini-3.8-flash` is `global`-only), API key in dev; `responseJsonSchema` structured output | `src/ai/` |
-| Live text + spoken follow-up questions | Gemini Live API (`gemini-3.8-live`, Vertex AI asia-south1), WebSocket relay on Cloud Run | `src/speech/geminiLive.js` |
+| Live text while she speaks (transcription only; the model never talks back) | Gemini Live API (`gemini-3.8-live`, Vertex AI asia-south1), WebSocket relay on Cloud Run | `src/speech/geminiLive.js` |
 | Offline danger-sign helper | Gemma 3 1B via Google AI Edge MediaPipe LLM Inference (WebGPU), suggestions only | `public/js/gemma-offline.js` |
 | Guideline passages (RAG) | Vertex AI RAG Engine over MoHFW PDFs in Cloud Storage; supplementary to the curated citations | `src/rag.js`, `scripts/rag-corpus.mjs` |
 | FHIR R4 records | Cloud Healthcare API FHIR store (PUT upserts, purged with the case) | `src/healthcare.js` |

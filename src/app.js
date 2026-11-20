@@ -186,7 +186,7 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
       autoLogin: Boolean(config.autoLogin),
       // Behind Firebase Hosting (which buffers server-sent events), live updates come straight from Cloud Run.
       eventsUrl: directOrigin,
-      // Live text and spoken follow-up questions while the worker speaks (Gemini Live API).
+      // Live text while the worker speaks (Gemini Live API, transcription only).
       liveSpeech: config.speech?.provider === 'gemini-live' ? { provider: 'gemini-live', model: config.speech.model, wsUrl: config.speech.wsUrl || null } : null,
       guidelineNotice: guidelines.notice,
       // Optional on-phone Gemma danger-sign helper; null hides it.

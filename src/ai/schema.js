@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { SIGN_IDS } from '../../public/shared/dangerSigns.js';
 import { SKIN_PATTERN_IDS } from '../../public/shared/skinPatterns.js';
 
-export const PROMPT_VERSION = 'intake-v4-skin-pattern';
+export const PROMPT_VERSION = 'intake-v5-live-transcribe-only';
 
 const nullable = (schema) => ({ anyOf: [schema, { type: 'null' }] });
 

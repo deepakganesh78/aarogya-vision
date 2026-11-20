@@ -2,19 +2,22 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { createClient } from '../ai/gemini.js';
 import { buildLiveInstruction } from '../ai/prompt.js';
 
-// Live speech relay: Gemini Live API (Vertex AI in production).
+// Live speech relay: Gemini Live API (Vertex AI in production). Transcription only.
 //
 //   phone --(PCM 16 kHz mono, binary frames)--> /api/speech/live?token=...&lang=xx --> Gemini Live
-//         <--(JSON: live text / follow-up text, binary: spoken follow-up PCM 24 kHz)--
+//         <--(JSON: live text in her language, then the English translation)--
 //
-// While the worker speaks, Gemini Live transcribes her words in her own language. When she stops, Gemini
-// asks at most two short spoken follow-up questions about signs she did not mention (questions only:
-// no diagnosis, no advice, no urgency; the checklist and the doctor decide). The final transcript is
-// translated to English with Gemini. Nothing is stored here: the phone sends the text with the visit.
+// While the worker speaks, Gemini Live transcribes her words in her own language. When she stops, the
+// relay waits only for the last words to be transcribed and ends the session: the model never talks
+// back. Anything it says (audio or text) is dropped here and never reaches the phone. The final
+// transcript is translated to English with Gemini. Nothing is stored here: the phone sends the text
+// with the visit.
 export const LIVE_PATH = '/api/speech/live';
 const MAX_SESSION_MS = 3 * 60 * 1000; // a voice note is at most 2 minutes
 const MAX_FRAME_BYTES = 16_000; // 500 ms at 16 kHz, 16-bit
-const FOLLOWUP_WAIT_MS = 15_000;
+// After she stops: finish once the model starts its (discarded) turn, or after this long at most.
+const TRANSCRIPT_SETTLE_MS = 3_000;
+const MODEL_TURN_GRACE_MS = 300;
 
 /** Default connector: a Gemini Live session through @google/genai. */
 export function geminiLiveConnector(config) {
@@ -60,7 +63,6 @@ export function attachLiveSpeech(server, { config, auth, connect, translate, aud
     let closed = false;
     let ended = false;
     let original = '';
-    let followup = '';
     const startedAt = Date.now();
     audit?.log({ type: 'speech.live_started', actor: user.id, provider: 'gemini-live', model: config.model });
 
@@ -82,6 +84,12 @@ export function attachLiveSpeech(server, { config, auth, connect, translate, aud
     async function finish() {
       if (closed || finishing) return;
       finishing = true;
+      // Her words are all in: stop the Gemini Live session before it can say anything.
+      try {
+        live?.close();
+      } catch {
+        // already closed
+      }
       send({ event: 'final', stream: 'original', utterance: 0, text: original.trim(), language: lang });
       let english = '';
       if (original.trim() && translate) {
@@ -105,18 +113,15 @@ export function attachLiveSpeech(server, { config, auth, connect, translate, aud
       }
       const sc = msg.serverContent;
       if (!sc) return;
-      if (sc.inputTranscription?.text) {
+      if (sc.inputTranscription?.text && !finishing) {
         original += sc.inputTranscription.text;
         send({ event: 'partial', stream: 'original', utterance: 0, text: original.trim(), language: lang });
       }
-      if (sc.outputTranscription?.text) {
-        followup += sc.outputTranscription.text;
-        send({ event: 'followup', text: followup.trim() });
-      }
-      for (const part of sc.modelTurn?.parts || []) {
-        if (part.inlineData?.data && client.readyState === WebSocket.OPEN) client.send(Buffer.from(part.inlineData.data, 'base64'));
-      }
-      if (sc.turnComplete && ended) finish();
+      // The model's own turn (speech or its transcription) is never relayed. Once it starts after she
+      // stopped, her transcript is complete.
+      const modelTalking = Boolean(sc.outputTranscription?.text || sc.modelTurn?.parts?.length);
+      if (ended && (sc.turnComplete || sc.generationComplete)) finish();
+      else if (ended && modelTalking) setTimeout(() => finish(), MODEL_TURN_GRACE_MS).unref?.();
     }
 
     Promise.resolve(
@@ -171,8 +176,8 @@ export function attachLiveSpeech(server, { config, auth, connect, translate, aud
         } catch {
           // provider gone: finish with what we have
         }
-        // Safety net if the follow-up never completes.
-        setTimeout(() => finish(), FOLLOWUP_WAIT_MS).unref?.();
+        // Safety net if the provider sends nothing more.
+        setTimeout(() => finish(), TRANSCRIPT_SETTLE_MS).unref?.();
       }
     });
     client.on('close', () => closeAll('client closed'));
