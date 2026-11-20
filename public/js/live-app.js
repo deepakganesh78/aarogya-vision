@@ -2668,7 +2668,8 @@ function setCasesFull(on) {
 $('#cases-full').addEventListener('click', () => setCasesFull(!document.body.classList.contains('cases-full')));
 
 // ---- Entry picker: choose the Doctor Dashboard or the Rural Worker app (hackathon demo) -----------
-// The demo opens on a translucent overlay above the live map. "Switch app" in the top bar returns to it.
+// The demo opens on a plain picker screen. "Switch app" in the top bar returns to it; the phone icon next
+// to it opens the Rural Worker app directly.
 // On a phone the Rural Worker app opens as a full page, like a native app; on larger screens it opens as
 // a phone on this screen, next to the dashboard, so a case sent from it can be watched landing on the map.
 const picker = $('#picker');
@@ -2689,6 +2690,9 @@ function showWorkerPhone(on) {
   if (on && !frame.getAttribute('src')) frame.setAttribute('src', '/asha');
   $('#phone').hidden = !on;
   document.body.classList.toggle('phone-open', on);
+  const phoneButton = $('#phone-button');
+  phoneButton.selected = on;
+  phoneButton.setAttribute('aria-label', on ? 'Close the ASHA phone app' : 'Open the ASHA phone app');
 }
 
 function enterApp(app) {
@@ -2714,6 +2718,11 @@ function openPicker() {
 $('#pick-doctor').addEventListener('click', () => enterApp('doctor'));
 $('#pick-worker').addEventListener('click', () => enterApp('worker'));
 $('#switch-app').addEventListener('click', openPicker);
+// A one-tap shortcut to the ASHA phone app, alongside "Switch app"; tapping again closes it.
+$('#phone-button').addEventListener('click', () => {
+  if (document.body.dataset.app === 'worker') enterApp('doctor');
+  else enterApp('worker');
+});
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !picker.hidden) enterApp('doctor');
 });

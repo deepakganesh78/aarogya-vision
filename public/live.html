@@ -83,6 +83,11 @@
         <md-icon slot="selected" data-icon="dark_mode"></md-icon>
       </md-icon-button>
 
+      <md-icon-button id="phone-button" toggle aria-label="Open the ASHA phone app" title="Open the Rural Worker (ASHA) phone app next to the dashboard">
+        <md-icon data-icon="mobile"></md-icon>
+        <md-icon slot="selected" data-icon="mobile" data-filled></md-icon>
+      </md-icon-button>
+
       <md-filled-tonal-button id="switch-app" class="switch-button" aria-label="Switch app" title="Switch between the Doctor Dashboard and the Rural Worker app">
         <md-icon slot="icon" data-icon="swap_horiz"></md-icon>
         <span class="switch-button__label">Switch app</span>
@@ -259,7 +264,7 @@
       </div>
     </md-dialog>
 
-    <!-- Entry picker for the demo: a translucent overlay over the live map with two large liquid-glass cards. -->
+    <!-- Entry picker for the demo: a plain, opaque screen with two large solid cards. -->
     <div id="picker" class="picker" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="picker-title" aria-describedby="picker-sub" hidden>
       <div class="picker__inner">
         <header class="picker__head">

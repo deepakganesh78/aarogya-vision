@@ -210,7 +210,12 @@ test('first load shows the entry picker over the live map; either app can be cho
   await expect(page.locator('.topbar')).not.toHaveAttribute('inert', '');
   await expect(page.locator('#detail .detail__head h2')).toHaveText('Active cases');
   await expect(page.locator('#phone')).toBeHidden();
-  await expect(page.locator('#phone-toggle')).toHaveCount(0);
+
+  // The phone icon in the top bar opens the ASHA app directly and closes it again.
+  await page.locator('#phone-button').click();
+  await expect(page.locator('#phone')).toBeVisible();
+  await page.locator('#phone-button').click();
+  await expect(page.locator('#phone')).toBeHidden();
 
   // Switch app: back to the same picker (Esc enters the dashboard); Rural Worker opens the phone app.
   await page.locator('#switch-app').click();
