@@ -69,10 +69,27 @@ cp .env.example .env        # AI_PROVIDER=mock works with no keys
 npm run dev                 # builds the Material UI, then serves http://localhost:8080
 ```
 
-- ASHA app: <http://localhost:8080/>. Demo code `asha-demo` (a second worker: `asha-demo-2`).
-- Doctor console: <http://localhost:8080/doctor>. Demo code `doctor-demo`.
+- ASHA app: <http://localhost:8080/>. Demo code `asha-demo` (Parvati; a second worker: `asha-demo-2`, Meena).
+- Doctor console: <http://localhost:8080/doctor>. Demo code `doctor-demo` (Dr. R. Senthil).
 
 To use real Gemini, set `AI_PROVIDER=gemini` and either a `GEMINI_API_KEY` from Google AI Studio, or `GOOGLE_GENAI_USE_ENTERPRISE=true` with `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` (Vertex AI with your gcloud credentials).
+
+## Patients, database and all ages (merged from the first prototype)
+
+- **Patient first.** A visit starts with *Who is the patient?*: search the worker's own patients or add one with name, age (days, weeks, months or years) and sex. For a woman, a *Pregnant* switch asks how many months. The same name and sex for the same worker is recognised as a returning patient, and the visit is counted.
+- **Local database.** `STORE=sqlite` (the default in development) keeps everything in one SQLite file, `.localdata/aarogya.db`, built into Node: tables `ashas`, `doctors`, `patients`, `cases` and `audit`. Photos and voice notes stay under `.localdata/media/`. `STORE=gcp` still uses Firestore and Cloud Storage.
+- **All ages.** The young-infant checklist is unchanged. Older children, adults and pregnant women get the all-ages danger signs (pregnancy bleeding, headache or blurred vision, reduced movement, snake bite, chest pain, wounds, diarrhoea with dehydration and more) and their cited guidance. The worker's typed note is read in English, Hindi or Tamil, with negation ("no fever").
+- **People.** `src/people.json` holds the demo ASHA workers (Parvati in Nammiyampattu, Jawadhu Hills) and their doctor (Dr. R. Senthil). The ASHA's phone shows her profile card, and the doctor sees her village and PHC.
+- **Worker steps.** *What to do now* shows curated steps from the cited guideline in the worker's language, with a **Read aloud** button. A filter blocks any medicine or dose.
+- **Doctor console.** KPI cards, search, *Today*/*Yesterday*/*Returning*/*Pregnant* filters, patient history, live updates (server-sent events) and **Download FHIR record** (also saved under `.localdata/fhir/`).
+- **Safety filter.** Sentences in which the AI names a condition are removed before the doctor sees the summary.
+- **Gemini fallback.** `GEMINI_MODEL` can list several models separated by commas. If one is overloaded (503) or rate-limited (429), the next is tried.
+
+```bash
+npm run seed           # 6 demo cases from the first prototype (Murugan returns the next day)
+```
+
+- Offline rules test: <http://localhost:8080/offline-test>. It runs 16 cases through the phone's offline rules and must show 0 under-triage.
 
 ## Three-minute demo
 

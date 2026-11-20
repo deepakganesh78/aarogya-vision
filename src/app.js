@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import multer from 'multer';
 import { levelRank, triageAssessment } from '../public/shared/triage.js';
 import { applyAutofill } from './autofill.js';
+import { buildFhirBundle } from './fhir.js';
+import { patientListItem, registerVisit } from './patients.js';
 import { CaseSubmission, DecisionInput, identifyMedia } from './validation.js';
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -40,6 +42,7 @@ function workerView(record) {
     vitals: { temperatureC: record.assessment?.temperatureC ?? null, breathsPerMin: record.assessment?.breathsPerMin ?? null },
     autofill: record.autofill || {},
     aiStatus: record.ai?.status || 'pending',
+    workerSteps: record.workerSteps || null,
     followUpQuestions: (record.ai?.output?.followUpQuestions || []).map((q) => q.workerLanguage).filter(Boolean),
     triage: { level: record.triage.level, reasons: record.triage.reasons, incomplete: record.triage.incomplete, signs: record.triage.signs },
     decision: record.decision
@@ -68,7 +71,8 @@ function doctorListItem(record) {
     aiStatus: record.ai?.status || 'pending',
     hasPhoto: Boolean(record.media?.photo),
     hasAudio: Boolean(record.media?.audio),
-    decisionOutcome: record.decision?.outcome || null
+    decisionOutcome: record.decision?.outcome || null,
+    decidedAt: record.decision?.at || null
   };
 }
 
@@ -85,7 +89,7 @@ function sortForQueue(records) {
 /**
  * @param {{config: object, store: object, audit: object, processor: object, provider: object|null, auth: object, guidelines: object}} deps
  */
-export function createApp({ config, store, audit, processor, provider, auth, guidelines, analytics }) {
+export function createApp({ config, store, audit, processor, provider, auth, guidelines, analytics, events }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -143,8 +147,10 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   api.get('/config', (req, res) => {
     res.json({
       notice: PROTOTYPE_NOTICE,
-      ai: { provider: config.ai.provider, model: config.ai.provider === 'gemini' ? config.ai.model : null },
+      ai: { provider: config.ai.provider, model: config.ai.provider === 'gemini' ? String(config.ai.model).split(',')[0].trim() : null },
       usingDemoCodes: config.usingDemoCodes,
+      // Live text while the worker speaks (Sarvam, local testing only).
+      liveSpeech: config.speech?.provider === 'sarvam' ? { provider: 'sarvam', model: config.speech.model, localOnly: true } : null,
       guidelineNotice: guidelines.notice
     });
   });
@@ -160,6 +166,16 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   });
 
   api.get('/me', auth.requireRole(null), (req, res) => res.json({ user: req.user }));
+
+  // Profile card: the ASHA's village, block, PHC and assigned doctor (or the doctor's facility).
+  api.get('/profile', auth.requireRole(null), async (req, res) => {
+    if (req.user.role === 'worker') {
+      const asha = (await store.getAsha?.(req.user.id)) || null;
+      const doctor = asha?.doctorId ? (await store.getDoctor?.(asha.doctorId)) || null : null;
+      return res.json({ user: req.user, asha, doctor });
+    }
+    res.json({ user: req.user, doctor: (await store.getDoctor?.(req.user.id)) || null });
+  });
 
   // ---- Worker ---------------------------------------------------------------------------------
 
@@ -195,14 +211,21 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
 
     const now = new Date().toISOString();
     if (!media.photo && !media.audio && !submission.assessment?.notes?.trim()) return res.status(400).json({ error: 'empty_case' });
-    const submitted = { patient: submission.patient || {}, assessment: submission.assessment || {} };
+    // Patient register: find this worker's patient (by id, or name + sex) or add a new one, and count the visit.
+    const asha = (await store.getAsha?.(req.user.id)) || {};
+    let patientIn = submission.patient || {};
+    if (patientIn.name && store.putPatient) {
+      const { snapshot } = await registerVisit(store, { id: req.user.id, village: asha.village }, patientIn, submission.capturedAt);
+      patientIn = snapshot;
+    }
+    const submitted = { patient: patientIn, assessment: submission.assessment || {} };
     const { patient, assessment } = applyAutofill(submitted, null);
     const record = {
       id: submission.id,
       capturedAt: submission.capturedAt,
       receivedAt: now,
       updatedAt: now,
-      worker: { id: req.user.id, name: req.user.name },
+      worker: { id: req.user.id, name: req.user.name, ...(asha.village ? { village: asha.village } : {}) },
       language: submission.language,
       consent: submission.consent,
       submitted,
@@ -234,7 +257,8 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
       }
       throw err;
     }
-    audit.log({ type: 'case.created', actor: req.user.id, caseId: record.id, level: record.triage.level, hasPhoto: Boolean(media.photo), hasAudio: Boolean(media.audio) });
+    audit.log({ type: 'case.created', actor: req.user.id, caseId: record.id, patientId: record.patient.id || null, level: record.triage.level, hasPhoto: Boolean(media.photo), hasAudio: Boolean(media.audio) });
+    events?.publish({ type: 'case.created', caseId: record.id, level: record.triage.level, workerId: req.user.id });
     processor.enqueue(record.id);
     res.status(201).json({ case: workerView(record) });
   });
@@ -243,6 +267,11 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
     const records = await store.listByWorker(req.user.id);
     records.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
     res.json({ cases: records.map(workerView) });
+  });
+
+  api.get('/worker/patients', requireWorker, async (req, res) => {
+    const patients = store.listPatientsByWorker ? await store.listPatientsByWorker(req.user.id) : [];
+    res.json({ patients: patients.map(patientListItem) });
   });
 
   api.get('/worker/cases/:id', requireWorker, async (req, res) => {
@@ -261,11 +290,85 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
     res.json({ cases: sortForQueue(records).map(doctorListItem) });
   });
 
+  // KPIs for the dashboard header.
+  api.get('/doctor/stats', requireDoctor, async (req, res) => {
+    const all = await store.listAll();
+    const now = Date.now();
+    const open = all.filter((r) => OPEN_STATUSES.has(r.status));
+    const oldest = open.reduce((acc, r) => (!acc || r.receivedAt < acc.receivedAt ? r : acc), null);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const repliedToday = all.filter((r) => r.decision && Date.parse(r.decision.at) >= today.getTime());
+    const replyMins = repliedToday.map((r) => (Date.parse(r.decision.at) - Date.parse(r.receivedAt)) / 60000).filter((m) => m >= 0).sort((a, b) => a - b);
+    res.json({
+      waiting: open.length,
+      urgentWaiting: open.filter((r) => r.triage.level === 'URGENT').length,
+      oldestWaiting: oldest ? { id: oldest.id, name: oldest.patient?.name || null, minutes: Math.round((now - Date.parse(oldest.receivedAt)) / 60000) } : null,
+      repliedToday: repliedToday.length,
+      medianReplyMinutes: replyMins.length ? Math.round(replyMins[Math.floor(replyMins.length / 2)]) : null,
+      receivedToday: all.filter((r) => Date.parse(r.receivedAt) >= today.getTime()).length
+    });
+  });
+
+  // Live updates: server-sent events. EventSource cannot send headers, so the token comes as a query parameter.
+  api.get('/doctor/events', (req, res) => {
+    const user = auth.verifyToken(String(req.query.token || ''));
+    if (!user || user.role !== 'doctor') return res.status(401).json({ error: 'unauthorized' });
+    res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    res.flushHeaders?.();
+    res.write('retry: 5000\n\n');
+    const send = (e) => res.write(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
+    const unsubscribe = events ? events.subscribe(send) : () => {};
+    const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
+    req.on('close', () => {
+      clearInterval(ping);
+      unsubscribe();
+    });
+  });
+
+  // Earlier visits of the same patient.
+  api.get('/doctor/patients/:id/cases', requireDoctor, async (req, res) => {
+    const patient = store.getPatient ? await store.getPatient(req.params.id) : null;
+    if (!patient) return res.status(404).json({ error: 'not_found' });
+    const records = store.listByPatient ? await store.listByPatient(patient.id) : [];
+    res.json({
+      patient: {
+        id: patient.id,
+        name: patient.name,
+        sex: patient.sex,
+        ageValue: patient.ageValue,
+        ageUnit: patient.ageUnit,
+        pregnant: patient.pregnant,
+        pregnancyMonths: patient.pregnancyMonths,
+        village: patient.village,
+        visits: patient.visits,
+        firstSeen: patient.firstSeen
+      },
+      history: records.map((r) => ({
+        id: r.id,
+        receivedAt: r.receivedAt,
+        level: r.triage.level,
+        status: r.status,
+        signs: r.triage.reasons.filter((x) => x.signId).map((x) => x.signId),
+        decision: r.decision ? { outcome: r.decision.outcome, instructions: r.decision.instructions, at: r.decision.at, by: r.decision.by.name } : null
+      }))
+    });
+  });
+
+  api.get('/doctor/cases/:id/fhir', requireDoctor, async (req, res) => {
+    const record = await store.get(req.params.id).catch(() => null);
+    if (!record) return res.status(404).json({ error: 'not_found' });
+    audit.log({ type: 'case.fhir_exported', actor: req.user.id, caseId: record.id });
+    res.set('Content-Disposition', `attachment; filename="case-${record.id}.fhir.json"`);
+    res.type('application/fhir+json').send(JSON.stringify(buildFhirBundle(record, { asha: await store.getAsha?.(record.worker.id) }), null, 2));
+  });
+
   api.get('/doctor/cases/:id', requireDoctor, async (req, res) => {
     const record = await store.get(req.params.id).catch(() => null);
     if (!record) return res.status(404).json({ error: 'not_found' });
     audit.log({ type: 'case.viewed', actor: req.user.id, caseId: record.id });
-    res.json({ case: record, guidelineNotice: guidelines.notice });
+    const asha = (await store.getAsha?.(record.worker.id)) || null;
+    res.json({ case: record, asha, guidelineNotice: guidelines.notice });
   });
 
   api.get('/doctor/cases/:id/media/:kind', requireDoctor, async (req, res) => {
@@ -314,6 +417,7 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
     });
     audit.log({ type: 'decision.recorded', actor: req.user.id, caseId: existing.id, outcome: decision.outcome, translated: Boolean(decision.translated) });
     analytics?.decided(updated);
+    events?.publish({ type: 'case.decided', caseId: existing.id, level: updated.triage.level, workerId: updated.worker.id });
     res.json({ case: updated });
   });
 
@@ -334,6 +438,7 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   app.use('/api', api);
 
   app.get('/doctor', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'doctor.html')));
+  app.get('/offline-test', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'offline-test.html')));
   app.use(
     express.static(PUBLIC_DIR, {
       setHeaders(res) {

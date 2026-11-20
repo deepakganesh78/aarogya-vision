@@ -28,10 +28,11 @@ export async function startTestServer({ env = {}, overrides = {} } = {}) {
     await services.processor.drain();
     await services.audit.flush();
     await new Promise((resolve) => server.close(resolve));
+    services.store.close?.();
     await fs.rm(dataDir, { recursive: true, force: true });
   }
 
-  return { baseUrl, services, config, login, close, dataDir };
+  return { baseUrl, services, config, login, close, dataDir, server };
 }
 
 export function buildCase(overrides = {}) {

@@ -63,10 +63,11 @@ describe('triageAssessment', () => {
     assert.equal(triage({ ageDays: 5, signs: allNo({ jaundice: 'yes' }) }).level, 'PRIORITY');
   });
 
-  it('marks infants older than 59 days as out of scope', () => {
-    const result = triage({ ageDays: 75 });
+  it('uses the all-ages signs after 59 days and never auto-clears an older patient', () => {
+    const result = triageAssessment({ patient: { ageDays: 75 }, assessment: {} });
     assert.equal(result.level, 'PRIORITY');
-    assert.equal(result.reasons[0].code, 'out_of_scope_age');
+    assert.deepEqual(result.incomplete, []);
+    assert.equal(result.reasons[0].code, 'no_sign_recognised');
   });
 
   it('treats local infection signs as same-day review', () => {

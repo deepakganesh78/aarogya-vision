@@ -58,6 +58,17 @@
 
       <!-- Home: my visits -->
       <section id="view-home" class="view" hidden>
+        <md-outlined-card id="profile-card" class="card profile-card" hidden>
+          <div class="card-body profile">
+            <span class="profile__avatar"><md-icon data-icon="badge"></md-icon></span>
+            <div class="stack-xs">
+              <div id="profile-name" class="md-typescale-title-medium"></div>
+              <div id="profile-place" class="md-typescale-body-medium on-surface-variant"></div>
+              <div id="profile-phc" class="md-typescale-body-small on-surface-variant"></div>
+              <div id="profile-doctor" class="md-typescale-body-small on-surface-variant"></div>
+            </div>
+          </div>
+        </md-outlined-card>
         <div class="section-header">
           <div class="stack-sm">
             <h1 id="my-cases-heading" class="md-typescale-headline-small" data-i18n="my_cases"></h1>
@@ -75,77 +86,98 @@
         <md-fab id="new-visit" class="fab" variant="primary" data-i18n-label="new_visit"><md-icon slot="icon" data-icon="add"></md-icon></md-fab>
       </section>
 
-      <!-- New visit: photo and/or voice, consent, send -->
+      <!-- New visit: patient details, photo and/or voice, note, consent, send -->
       <section id="view-capture" class="view capture" hidden>
         <div class="page-header">
           <md-icon-button id="cancel-capture" data-i18n-aria="cancel"><md-icon data-icon="close"></md-icon></md-icon-button>
           <h1 class="md-typescale-title-large" data-i18n="new_visit"></h1>
         </div>
-        <p class="md-typescale-body-large" data-i18n="capture_hint"></p>
+
+        <md-outlined-card id="patient-card" class="card patient-card">
+          <div class="card-body">
+            <div class="row space-between card-head">
+              <h2 class="card-title md-typescale-title-small"><md-icon data-icon="person"></md-icon><span data-i18n="patient_details"></span></h2>
+              <span id="patient-status" class="badge badge--neutral" hidden></span>
+            </div>
+            <div class="name-wrap">
+              <md-outlined-text-field id="p-name" data-i18n-label="name" autocomplete="off" required></md-outlined-text-field>
+              <md-list id="patient-suggestions" class="suggestions" aria-label="Matching patients" hidden></md-list>
+            </div>
+            <div class="age-row">
+              <md-outlined-text-field id="p-age" data-i18n-label="age_value" type="number" inputmode="decimal" min="0" max="120" required></md-outlined-text-field>
+              <md-outlined-select id="p-unit" data-i18n-label="age_unit">
+                <md-select-option value="days"><div slot="headline" data-i18n="unit_days"></div></md-select-option>
+                <md-select-option value="weeks"><div slot="headline" data-i18n="unit_weeks"></div></md-select-option>
+                <md-select-option value="months"><div slot="headline" data-i18n="unit_months"></div></md-select-option>
+                <md-select-option value="years" selected><div slot="headline" data-i18n="unit_years"></div></md-select-option>
+              </md-outlined-select>
+              <md-outlined-select id="p-months" data-i18n-label="pregnancy_months_short" hidden></md-outlined-select>
+            </div>
+            <div class="sex-row">
+              <md-chip-set id="p-sex" role="radiogroup" aria-label="Sex">
+                <md-filter-chip data-sex="female" data-i18n-label="female"></md-filter-chip>
+                <md-filter-chip data-sex="male" data-i18n-label="male"></md-filter-chip>
+              </md-chip-set>
+              <label id="p-preg-row" class="preg-toggle" hidden>
+                <md-icon data-icon="pregnant_woman"></md-icon>
+                <span class="md-typescale-label-large" data-i18n="pregnant"></span>
+                <md-switch id="p-pregnant" icons></md-switch>
+              </label>
+            </div>
+            <p id="patient-error" class="error-text md-typescale-body-small" role="alert" hidden></p>
+          </div>
+        </md-outlined-card>
 
         <input id="photo-input" type="file" accept="image/*" capture="environment" hidden />
         <div class="capture-tiles">
           <button id="take-photo" class="capture-tile" type="button">
             <md-focus-ring></md-focus-ring><md-ripple></md-ripple>
             <md-icon data-icon="photo_camera"></md-icon>
-            <span id="take-photo-label" class="md-typescale-title-medium" data-i18n="take_photo"></span>
+            <span id="take-photo-label" class="md-typescale-title-small" data-i18n="take_photo"></span>
           </button>
           <button id="record" class="capture-tile" type="button">
             <md-focus-ring></md-focus-ring><md-ripple></md-ripple>
             <md-icon id="record-icon" data-icon="mic"></md-icon>
-            <span id="record-label" class="md-typescale-title-medium" data-i18n="speak"></span>
-            <span id="record-timer" class="md-typescale-label-large" role="status"></span>
+            <span id="record-label" class="md-typescale-title-small" data-i18n="speak"></span>
+            <span id="record-timer" class="md-typescale-label-medium" role="status"></span>
           </button>
         </div>
         <md-linear-progress id="record-progress" value="0" hidden></md-linear-progress>
-        <p class="tip md-typescale-body-medium on-surface-variant"><md-icon data-icon="mic"></md-icon><span data-i18n="voice_tip"></span></p>
-        <p id="mic-error" class="error-text md-typescale-body-medium" data-i18n="mic_unavailable" hidden></p>
+        <p id="mic-error" class="error-text md-typescale-body-small" data-i18n="mic_unavailable" hidden></p>
 
-        <md-outlined-card id="attachments" class="card" hidden>
-          <md-list class="attachments">
-            <md-list-item id="photo-item" hidden>
-              <img id="photo-preview" slot="start" class="thumb" alt="" />
-              <div slot="headline" data-i18n="photo"></div>
-              <md-icon-button id="remove-photo" slot="end" data-i18n-aria="remove"><md-icon data-icon="delete"></md-icon></md-icon-button>
-            </md-list-item>
-            <md-list-item id="audio-item" hidden>
-              <span slot="start" class="thumb thumb--icon"><md-icon data-icon="graphic_eq"></md-icon></span>
-              <div slot="headline" data-i18n="voice_note"></div>
-              <div slot="supporting-text" id="audio-duration"></div>
-              <md-icon-button id="remove-audio" slot="end" data-i18n-aria="remove"><md-icon data-icon="delete"></md-icon></md-icon-button>
-            </md-list-item>
-          </md-list>
-          <audio id="audio-preview" class="audio-preview" controls hidden></audio>
-        </md-outlined-card>
-
-        <div class="row">
-          <md-text-button id="type-instead" type="button"><md-icon slot="icon" data-icon="chat"></md-icon><span data-i18n="type_instead"></span></md-text-button>
+        <div id="attachments" class="attachments-row" hidden>
+          <span id="photo-item" class="attachment" hidden>
+            <img id="photo-preview" class="thumb" alt="" />
+            <md-icon-button id="remove-photo" data-i18n-aria="remove"><md-icon data-icon="close"></md-icon></md-icon-button>
+          </span>
+          <span id="audio-item" class="attachment attachment--audio" hidden>
+            <audio id="audio-preview" class="audio-preview" controls hidden></audio>
+            <span id="audio-duration" class="visually-hidden"></span>
+            <md-icon-button id="remove-audio" data-i18n-aria="remove"><md-icon data-icon="close"></md-icon></md-icon-button>
+          </span>
         </div>
-        <md-outlined-text-field id="notes" type="textarea" rows="3" maxlength="1000" data-i18n-label="notes_label" hidden></md-outlined-text-field>
 
-        <md-outlined-card class="card">
-          <div class="switch-list">
-            <label class="switch-row">
-              <md-icon data-icon="verified_user"></md-icon>
-              <span class="md-typescale-body-large" data-i18n="consent_short"></span>
-              <md-switch id="consent" icons></md-switch>
-            </label>
-            <md-divider></md-divider>
-            <label class="switch-row switch-row--danger">
-              <md-icon data-icon="warning"></md-icon>
-              <span class="md-typescale-body-large" data-i18n="danger_flag"></span>
-              <md-switch id="danger-flag" icons></md-switch>
-            </label>
-            <div class="row">
-              <md-text-button id="show-danger-signs" type="button"><md-icon slot="icon" data-icon="info"></md-icon><span data-i18n="danger_flag_help"></span></md-text-button>
-            </div>
-            <div id="danger-signs-list" hidden></div>
+        <md-outlined-text-field id="notes" type="textarea" rows="2" data-i18n-label="notes_label"></md-outlined-text-field>
+        <p id="live-english" class="live-english md-typescale-body-small on-surface-variant" hidden></p>
+
+        <div class="switch-list compact">
+          <label class="switch-row">
+            <md-icon data-icon="verified_user"></md-icon>
+            <span class="md-typescale-body-medium" data-i18n="consent_short"></span>
+            <md-switch id="consent" icons></md-switch>
+          </label>
+          <md-divider></md-divider>
+          <div class="switch-row switch-row--danger">
+            <md-icon data-icon="warning"></md-icon>
+            <span class="danger-label md-typescale-body-medium"><label for="danger-flag" data-i18n="danger_flag"></label><md-icon-button id="show-danger-signs" type="button" data-i18n-aria="danger_flag_help"><md-icon data-icon="info"></md-icon></md-icon-button></span>
+            <md-switch id="danger-flag" icons></md-switch>
           </div>
-        </md-outlined-card>
+          <div id="danger-signs-list" hidden></div>
+        </div>
 
         <div id="capture-error" class="error-banner md-typescale-body-medium" role="alert" hidden></div>
 
-        <div class="bottom-bar">
+        <div class="send-row">
           <md-filled-button id="send-case" class="send-button" type="button"><md-icon slot="icon" data-icon="send"></md-icon><span data-i18n="send_to_doctor"></span></md-filled-button>
         </div>
       </section>

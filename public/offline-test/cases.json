@@ -1,0 +1,204 @@
+{
+  "note": "Rules-only test cases: each note goes through the same danger-sign rules the ASHA's phone runs offline. 'expect' is the urgency a careful reviewer would want. Under-triage (lower than expected) is a failure.",
+  "cases": [
+    {
+      "label": "Newborn — not feeding, hot, red navel (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Baby of Kaveri",
+        "ageValue": 8,
+        "ageUnit": "days",
+        "sex": "female"
+      },
+      "note": "8 days old, not feeding, feels hot. Red skin around the navel.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Adult — leg cut with pus, no fever (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Murugan",
+        "ageValue": 34,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "Cut on the leg from farm work three days ago, now pus around it. No fever.",
+      "expect": "PRIORITY"
+    },
+    {
+      "label": "Child — small itchy rash, no fever (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Selvi",
+        "ageValue": 6,
+        "ageUnit": "years",
+        "sex": "female"
+      },
+      "note": "Small rash on the arm, itching. No fever, eating well.",
+      "expect": "ROUTINE"
+    },
+    {
+      "label": "Pregnant — headache, blurred vision, swelling (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Anjali",
+        "ageValue": 24,
+        "ageUnit": "years",
+        "sex": "female",
+        "pregnant": true,
+        "pregnancyMonths": 7
+      },
+      "note": "Seven months pregnant. Severe headache since morning and blurred vision. Swelling in the feet.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Adult — spreading red wound, pus, now fever (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Murugan",
+        "ageValue": 34,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "Same leg wound as yesterday. Spreading red around it and pus, and now he has fever.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Toddler — loose motions, drinking well (seed)",
+      "language": "en",
+      "patient": {
+        "name": "Ravi",
+        "ageValue": 2,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "Loose motions since yesterday, still drinking well, playing.",
+      "expect": "PRIORITY"
+    },
+    {
+      "label": "Newborn — deck demo in Tamil",
+      "language": "ta",
+      "patient": {
+        "name": "Baby of Lakshmi",
+        "ageValue": 8,
+        "ageUnit": "days",
+        "sex": "female"
+      },
+      "note": "8 நாள் குழந்தை, பால் குடிக்கவில்லை, உடம்பு சூடாக இருக்கிறது. தொப்புள் சுற்றி சிவப்பாக இருக்கிறது.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Child — fits, in Hindi",
+      "language": "hi",
+      "patient": {
+        "name": "Arjun",
+        "ageValue": 1,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "एक साल का बच्चा, कल रात से तेज़ बुखार, आज सुबह झटके आए।",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Infant — very sleepy, hard to wake (unusual wording)",
+      "language": "en",
+      "patient": {
+        "name": "Baby of Meena",
+        "ageValue": 3,
+        "ageUnit": "months",
+        "sex": "female"
+      },
+      "note": "Baby is very sleepy since morning, hard to wake up, not taking the breast properly.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Pregnant — bleeding, in Tamil",
+      "language": "ta",
+      "patient": {
+        "name": "Kala",
+        "ageValue": 27,
+        "ageUnit": "years",
+        "sex": "female",
+        "pregnant": true,
+        "pregnancyMonths": 6
+      },
+      "note": "ஆறு மாத கர்ப்பிணி. இன்று காலை முதல் ரத்தப்போக்கு இருக்கிறது.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Adult — snake bite on the foot",
+      "language": "en",
+      "patient": {
+        "name": "Raman",
+        "ageValue": 45,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "Bitten by a snake on the foot in the field 20 minutes ago. Foot is swelling.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Adult — mild cough and cold",
+      "language": "en",
+      "patient": {
+        "name": "Devi",
+        "ageValue": 40,
+        "ageUnit": "years",
+        "sex": "female"
+      },
+      "note": "Cough and running nose for two days. No fever, eating and working normally.",
+      "expect": "PRIORITY"
+    },
+    {
+      "label": "Newborn — feeding well, no fever, no fits (all signs answered)",
+      "language": "en",
+      "patient": {
+        "name": "Baby of Revathi",
+        "ageValue": 12,
+        "ageUnit": "days",
+        "sex": "male"
+      },
+      "note": "Feeding well, moving well.",
+      "checklistAllNo": true,
+      "expect": "ROUTINE"
+    },
+    {
+      "label": "Pregnant — reduced baby movement",
+      "language": "en",
+      "patient": {
+        "name": "Priya",
+        "ageValue": 29,
+        "ageUnit": "years",
+        "sex": "female",
+        "pregnant": true,
+        "pregnancyMonths": 8
+      },
+      "note": "Eight months pregnant. Baby not moving since yesterday evening.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Child — diarrhoea with sunken eyes",
+      "language": "en",
+      "patient": {
+        "name": "Kavin",
+        "ageValue": 18,
+        "ageUnit": "months",
+        "sex": "male"
+      },
+      "note": "Loose motions since two days, sunken eyes, very thirsty.",
+      "expect": "URGENT"
+    },
+    {
+      "label": "Adult — dog bite on the hand",
+      "language": "ta",
+      "patient": {
+        "name": "Velu",
+        "ageValue": 52,
+        "ageUnit": "years",
+        "sex": "male"
+      },
+      "note": "நாய் கடி, கையில் காயம். காய்ச்சல் இல்லை.",
+      "expect": "PRIORITY"
+    }
+  ]
+}

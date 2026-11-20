@@ -22,6 +22,7 @@
         </div>
         <span class="md-typescale-body-medium top-app-bar__subtitle">Doctor review</span>
       </div>
+      <span id="live-badge" class="status-pill offline md-typescale-label-large" title="Live updates"><md-icon data-icon="sync"></md-icon><span id="live-text">Connecting</span></span>
       <span id="ai-badge" class="status-pill neutral md-typescale-label-large"><md-icon data-icon="star_shine"></md-icon><span id="ai-badge-text">AI</span></span>
       <span id="doctor-name" class="md-typescale-body-medium on-surface-variant"></span>
       <md-icon-button id="sign-out" aria-label="Sign out" hidden><md-icon data-icon="logout"></md-icon></md-icon-button>
@@ -54,6 +55,7 @@
           <span id="alert-text"></span>
           <md-text-button id="alert-dismiss">Dismiss</md-text-button>
         </div>
+        <div id="kpis" class="kpis" aria-label="Today at a glance"></div>
         <div class="list-detail">
           <aside class="pane pane--list" aria-label="Case queue">
             <div class="pane__header">
@@ -65,6 +67,15 @@
               <md-primary-tab data-view="responded">Responded</md-primary-tab>
               <md-primary-tab data-view="all">All</md-primary-tab>
             </md-tabs>
+            <div class="queue-filters">
+              <md-outlined-text-field id="queue-search" label="Search name, village, ASHA" type="search" autocomplete="off"><md-icon slot="leading-icon" data-icon="search"></md-icon></md-outlined-text-field>
+              <md-chip-set id="queue-chips" aria-label="Filters">
+                <md-filter-chip data-day="today" label="Today"></md-filter-chip>
+                <md-filter-chip data-day="yesterday" label="Yesterday"></md-filter-chip>
+                <md-filter-chip id="filter-returning" label="Returning patients"></md-filter-chip>
+                <md-filter-chip id="filter-pregnant" label="Pregnant"></md-filter-chip>
+              </md-chip-set>
+            </div>
             <md-list id="queue" class="queue"></md-list>
             <div id="queue-empty" class="empty-state" hidden>
               <md-icon data-icon="inbox"></md-icon>

@@ -1,0 +1,36 @@
+{
+  "_note": "DEMO people and places. Names are made up; places are real areas with approximate coordinates. Jawadhu Hills is a remote tribal hill block about 190 km from Chennai. The id must match the id in ACCESS_CODES.",
+  "ashas": [
+    {
+      "id": "asha-001",
+      "name": "Parvati",
+      "village": "Nammiyampattu",
+      "block": "Jawadhu Hills",
+      "district": "Tiruvannamalai",
+      "state": "Tamil Nadu",
+      "phc": "PHC Jamunamarathur",
+      "language": "ta",
+      "doctorId": "dr-001"
+    },
+    {
+      "id": "asha-002",
+      "name": "Meena",
+      "village": "Kovilur",
+      "block": "Jawadhu Hills",
+      "district": "Tiruvannamalai",
+      "state": "Tamil Nadu",
+      "phc": "PHC Jamunamarathur",
+      "language": "ta",
+      "doctorId": "dr-001"
+    }
+  ],
+  "doctors": [
+    {
+      "id": "dr-001",
+      "name": "Dr. R. Senthil",
+      "role": "Medical officer, telemedicine desk",
+      "facility": "Government Medical College Hospital, Tiruvannamalai",
+      "town": "Tiruvannamalai"
+    }
+  ]
+}

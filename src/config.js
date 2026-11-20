@@ -2,9 +2,9 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 
 const DEMO_ACCESS_CODES = [
-  { code: 'asha-demo', role: 'worker', id: 'asha-001', name: 'Lakshmi (ASHA, demo)' },
+  { code: 'asha-demo', role: 'worker', id: 'asha-001', name: 'Parvati (ASHA, demo)' },
   { code: 'asha-demo-2', role: 'worker', id: 'asha-002', name: 'Meena (ASHA, demo)' },
-  { code: 'doctor-demo', role: 'doctor', id: 'dr-001', name: 'Dr. Priya (demo)' }
+  { code: 'doctor-demo', role: 'doctor', id: 'dr-001', name: 'Dr. R. Senthil (demo)' }
 ];
 
 function parseAccessCodes(raw, isProd) {
@@ -42,8 +42,15 @@ export function loadConfig(env = process.env) {
   if (!['gemini', 'mock', 'none'].includes(provider)) throw new Error('AI_PROVIDER must be gemini, mock or none');
   if (provider === 'mock' && isProd) throw new Error('AI_PROVIDER=mock is not allowed in production');
 
-  const store = env.STORE || (isProd ? 'gcp' : 'local');
-  if (!['local', 'gcp'].includes(store)) throw new Error('STORE must be local or gcp');
+  // sqlite = one local database file (default for development); local = JSON files; gcp = Firestore + Cloud Storage.
+  // Live speech-to-text while the worker speaks. Sarvam AI is for LOCAL TESTING ONLY: the showcase is Google-only.
+  const speechProvider = env.SPEECH_PROVIDER || 'none';
+  if (!['none', 'sarvam'].includes(speechProvider)) throw new Error('SPEECH_PROVIDER must be none or sarvam');
+  if (speechProvider === 'sarvam' && isProd) throw new Error('SPEECH_PROVIDER=sarvam is for local testing only and is not allowed in production');
+  if (speechProvider === 'sarvam' && !env.SARVAM_API_KEY) throw new Error('SPEECH_PROVIDER=sarvam needs SARVAM_API_KEY');
+
+  const store = env.STORE || (isProd ? 'gcp' : 'sqlite');
+  if (!['sqlite', 'local', 'gcp'].includes(store)) throw new Error('STORE must be sqlite, local or gcp');
 
   return {
     isProd,
@@ -55,7 +62,7 @@ export function loadConfig(env = process.env) {
       databaseId: env.FIRESTORE_DATABASE,
       collection: env.FIRESTORE_COLLECTION || 'cases'
     },
-    auditSink: env.AUDIT_SINK || (store === 'gcp' ? 'cloud-logging' : 'file'),
+    auditSink: env.AUDIT_SINK || (store === 'gcp' ? 'cloud-logging' : store === 'sqlite' ? 'sqlite' : 'file'),
     analytics: {
       projectId: env.GOOGLE_CLOUD_PROJECT,
       dataset: env.BIGQUERY_DATASET,
@@ -69,6 +76,12 @@ export function loadConfig(env = process.env) {
     retentionDays: Number(env.RETENTION_DAYS) || 30,
     maxPhotoBytes: 8 * 1024 * 1024,
     maxAudioBytes: 10 * 1024 * 1024,
+    speech: {
+      provider: speechProvider,
+      apiKey: env.SARVAM_API_KEY,
+      model: env.SARVAM_STT_MODEL || 'saaras:v4',
+      url: env.SARVAM_WS_URL || 'wss://api.sarvam.ai/speech-to-text-realtime/ws'
+    },
     ai: {
       provider,
       apiKey: env.GEMINI_API_KEY,
@@ -76,7 +89,8 @@ export function loadConfig(env = process.env) {
       enterprise,
       project: env.GOOGLE_CLOUD_PROJECT,
       location: env.GOOGLE_CLOUD_LOCATION || 'asia-south1',
-      timeoutMs: Number(env.AI_TIMEOUT_MS) || 60_000,
+      // Per model: with fallbacks in GEMINI_MODEL, a slow model gives way to the next one.
+      timeoutMs: Number(env.AI_TIMEOUT_MS) || 30_000,
       concurrency: Number(env.AI_CONCURRENCY) || 2
     }
   };

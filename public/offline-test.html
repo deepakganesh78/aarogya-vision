@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Offline rules test · Aarogya-Vision</title>
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/vendor/theme.css" />
+    <link rel="stylesheet" href="/vendor/fonts.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/offline-test.css" />
+    <script type="module" src="/js/offline-test.js"></script>
+  </head>
+  <body class="doctor">
+    <header class="top-app-bar">
+      <div class="top-app-bar__brand">
+        <md-icon data-icon="fact_check"></md-icon>
+        <div class="top-app-bar__title md-typescale-title-large">Aarogya-Vision</div>
+        <span class="md-typescale-body-medium top-app-bar__subtitle">Offline rules test</span>
+      </div>
+      <md-text-button href="/doctor">Doctor console</md-text-button>
+      <md-text-button href="/">ASHA app</md-text-button>
+    </header>
+    <main class="stack ot">
+      <div class="stack-sm">
+        <h1 class="md-typescale-headline-small">What the phone decides with no network</h1>
+        <p class="md-typescale-body-large on-surface-variant">
+          Each case runs through the same danger-sign rules the ASHA's phone uses offline (no AI, no server, nothing saved).
+          The rules read the patient's age group, pregnancy and the worker's typed note in English, Hindi or Tamil.
+          A case fails only if the phone would give a <b>lower</b> urgency than expected.
+        </p>
+      </div>
+
+      <div id="summary" class="kpis"></div>
+
+      <md-outlined-card class="card">
+        <div class="card-body">
+          <div class="row space-between">
+            <h2 class="card-title md-typescale-title-medium"><md-icon data-icon="fact_check"></md-icon>Test cases</h2>
+            <md-filled-button id="run-all"><md-icon slot="icon" data-icon="refresh"></md-icon>Run all</md-filled-button>
+          </div>
+          <div class="ot-table-wrap">
+            <table class="ot-table md-typescale-body-medium">
+              <thead>
+                <tr><th>Case</th><th>Patient</th><th>Note</th><th>Expected</th><th>Phone says</th><th>Why</th></tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </md-outlined-card>
+
+      <md-outlined-card class="card">
+        <form id="custom" class="card-body" novalidate>
+          <h2 class="card-title md-typescale-title-medium"><md-icon data-icon="edit"></md-icon>Try your own case</h2>
+          <div class="ot-form">
+            <md-outlined-text-field id="c-age" label="Age" type="number" min="0" max="120" value="24"></md-outlined-text-field>
+            <md-outlined-select id="c-unit" label="Unit">
+              <md-select-option value="days"><div slot="headline">days</div></md-select-option>
+              <md-select-option value="weeks"><div slot="headline">weeks</div></md-select-option>
+              <md-select-option value="months"><div slot="headline">months</div></md-select-option>
+              <md-select-option value="years" selected><div slot="headline">years</div></md-select-option>
+            </md-outlined-select>
+            <md-outlined-select id="c-sex" label="Sex">
+              <md-select-option value="female" selected><div slot="headline">Female</div></md-select-option>
+              <md-select-option value="male"><div slot="headline">Male</div></md-select-option>
+            </md-outlined-select>
+            <md-outlined-text-field id="c-months" label="Months pregnant (0 = not pregnant)" type="number" min="0" max="9" value="0"></md-outlined-text-field>
+          </div>
+          <md-outlined-text-field id="c-note" type="textarea" rows="3" label="Worker's note (any language)" value="Severe headache and blurred vision."></md-outlined-text-field>
+          <div class="row"><md-filled-tonal-button id="c-run" type="submit">Check</md-filled-tonal-button></div>
+          <div id="c-result" class="stack-sm"></div>
+        </form>
+      </md-outlined-card>
+    </main>
+  </body>
+</html>

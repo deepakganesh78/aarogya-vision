@@ -1,5 +1,6 @@
 import { loadConfig } from './config.js';
 import { createServices, purgeExpired } from './bootstrap.js';
+import { attachLiveSpeech } from './speech/sarvamLive.js';
 
 const config = loadConfig();
 const services = await createServices(config);
@@ -9,6 +10,11 @@ const server = services.app.listen(config.port, () => {
   console.log(`  store=${config.store} ai=${config.ai.provider}${config.ai.provider === 'gemini' ? ` model=${config.ai.model}` : ''}`);
   if (config.usingDemoCodes) console.log('  using DEMO access codes: worker "asha-demo", doctor "doctor-demo"');
 });
+
+if (config.speech.provider === 'sarvam') {
+  attachLiveSpeech(server, { config: config.speech, auth: services.auth, audit: services.audit });
+  console.log(`  live speech: Sarvam ${config.speech.model} (LOCAL TESTING ONLY)`);
+}
 
 await services.processor.resumePending();
 

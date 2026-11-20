@@ -1,0 +1,916 @@
+{
+  "corpus": "all-ages-danger-signs",
+  "version": "2026.11-draft",
+  "notice": "Paraphrased summaries for prototyping only. Verify every entry against the official document and obtain clinician sign-off before field use.",
+  "entries": [
+    {
+      "id": "who-very-severe-disease",
+      "title": "Very severe disease in young infants",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "A young infant with any one of these signs is classified as having very severe disease: not feeding well, convulsions, fast breathing (60 or more breaths per minute) in an infant under 7 days old, severe chest indrawing, fever (37.5 °C or above), low body temperature (below 35.5 °C), or movement only when stimulated or no movement at all.",
+      "action": "Classified for urgent referral to hospital, with pre-referral care given by a trained health worker as the guideline describes.",
+      "signs": [
+        "not_feeding_well",
+        "convulsions",
+        "fast_breathing",
+        "severe_chest_indrawing",
+        "fever",
+        "low_temperature",
+        "low_movement"
+      ],
+      "keywords": [
+        "feed",
+        "feeding",
+        "suck",
+        "fits",
+        "convulsion",
+        "fever",
+        "hot",
+        "cold",
+        "breathing",
+        "lethargic",
+        "not moving"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Go to the PHC now — do not wait.",
+          "Keep the baby warm (skin-to-skin with mother, covered head).",
+          "Keep breastfeeding on the way if the baby can feed."
+        ],
+        "hi": [
+          "अभी PHC जाएँ — इंतज़ार न करें।",
+          "बच्चे को गर्म रखें (माँ से त्वचा से त्वचा, सिर ढका हुआ)।",
+          "अगर बच्चा पी सके तो रास्ते में स्तनपान जारी रखें।"
+        ],
+        "ta": [
+          "உடனே PHC-க்குச் செல்லுங்கள் — காத்திருக்க வேண்டாம்.",
+          "குழந்தையைச் சூடாக வைத்திருங்கள் (தாயுடன் தோலோடு தோல், தலையை மூடி).",
+          "குழந்தை குடிக்க முடிந்தால் வழியில் தாய்ப்பால் தொடருங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "who-fast-breathing-7-59-days",
+      "title": "Fast breathing in infants aged 7-59 days",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "Fast breathing (60 or more per minute) as the only sign in an infant aged 7-59 days is classified as pneumonia, which a trained health worker may manage as an outpatient with close follow-up. In an infant under 7 days old it is a sign of very severe disease.",
+      "action": "Needs clinician assessment the same day. This prototype tells the ASHA to refer; the doctor decides management.",
+      "signs": [
+        "fast_breathing"
+      ],
+      "keywords": [
+        "breathing",
+        "breath",
+        "fast"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Go to the PHC now — do not wait.",
+          "Keep the baby warm (skin-to-skin with mother, covered head).",
+          "Keep breastfeeding on the way if the baby can feed."
+        ],
+        "hi": [
+          "अभी PHC जाएँ — इंतज़ार न करें।",
+          "बच्चे को गर्म रखें (माँ से त्वचा से त्वचा, सिर ढका हुआ)।",
+          "अगर बच्चा पी सके तो रास्ते में स्तनपान जारी रखें।"
+        ],
+        "ta": [
+          "உடனே PHC-க்குச் செல்லுங்கள் — காத்திருக்க வேண்டாம்.",
+          "குழந்தையைச் சூடாக வைத்திருங்கள் (தாயுடன் தோலோடு தோல், தலையை மூடி).",
+          "குழந்தை குடிக்க முடிந்தால் வழியில் தாய்ப்பால் தொடருங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "who-local-bacterial-infection",
+      "title": "Local bacterial infection of the umbilicus or skin",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "An umbilicus that is red or draining pus, or skin pustules, is classified as local bacterial infection when no sign of very severe disease is present.",
+      "action": "Managed by a trained health worker according to the guideline, with home-care advice and a follow-up visit.",
+      "signs": [
+        "umbilicus_red_or_pus",
+        "few_skin_pustules"
+      ],
+      "keywords": [
+        "navel",
+        "umbilicus",
+        "umbilical",
+        "pus",
+        "pustule",
+        "boil",
+        "red"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Show the doctor the navel photo today.",
+          "Keep the cord area clean and dry; do not apply anything on it.",
+          "If baby stops feeding, gets fever or redness spreads — go to the PHC at once."
+        ],
+        "hi": [
+          "आज ही डॉक्टर को नाभि की फ़ोटो दिखाएँ।",
+          "नाभि को साफ़ और सूखा रखें; उस पर कुछ न लगाएँ।",
+          "अगर बच्चा दूध पीना बंद करे, बुखार हो या लाली फैले — तुरंत PHC जाएँ।"
+        ],
+        "ta": [
+          "இன்றே தொப்புள் புகைப்படத்தை மருத்துவரிடம் காட்டுங்கள்.",
+          "தொப்புள் பகுதியைச் சுத்தமாகவும் உலர்வாகவும் வைத்திருங்கள்; எதுவும் தடவ வேண்டாம்.",
+          "குழந்தை பால் குடிக்காவிட்டால், காய்ச்சல் வந்தால் அல்லது சிவப்பு பரவினால் — உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "imnci-india-serious-skin-umbilical",
+      "title": "Spreading umbilical redness or many skin pustules",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Integrated Management of Neonatal and Childhood Illness (IMNCI) chart booklet",
+        "year": null,
+        "url": null
+      },
+      "summary": "India's IMNCI chart booklet treats umbilical redness extending to the skin, or 10 or more skin pustules or a big boil, as signs of possible serious bacterial infection.",
+      "action": "Urgent referral to a facility as the IMNCI chart booklet describes.",
+      "signs": [
+        "umbilical_redness_spreading",
+        "many_skin_pustules"
+      ],
+      "keywords": [
+        "navel",
+        "umbilicus",
+        "umbilical",
+        "spreading",
+        "pustule",
+        "boil",
+        "red"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Show the doctor the navel photo today.",
+          "Keep the cord area clean and dry; do not apply anything on it.",
+          "If baby stops feeding, gets fever or redness spreads — go to the PHC at once."
+        ],
+        "hi": [
+          "आज ही डॉक्टर को नाभि की फ़ोटो दिखाएँ।",
+          "नाभि को साफ़ और सूखा रखें; उस पर कुछ न लगाएँ।",
+          "अगर बच्चा दूध पीना बंद करे, बुखार हो या लाली फैले — तुरंत PHC जाएँ।"
+        ],
+        "ta": [
+          "இன்றே தொப்புள் புகைப்படத்தை மருத்துவரிடம் காட்டுங்கள்.",
+          "தொப்புள் பகுதியைச் சுத்தமாகவும் உலர்வாகவும் வைத்திருங்கள்; எதுவும் தடவ வேண்டாம்.",
+          "குழந்தை பால் குடிக்காவிட்டால், காய்ச்சல் வந்தால் அல்லது சிவப்பு பரவினால் — உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "who-jaundice",
+      "title": "Jaundice in young infants",
+      "source": {
+        "publisher": "World Health Organization",
+        "document": "Management of the sick young infant aged up to 2 months: IMCI chart booklet",
+        "year": 2019,
+        "url": "https://www.who.int/publications/i/item/9789241516365"
+      },
+      "summary": "Jaundice appearing within the first 24 hours of life, or yellow palms and soles at any age, is classified as severe jaundice. Jaundice without these features is managed with home-care advice and follow-up.",
+      "action": "Severe jaundice: urgent referral. Otherwise advise the family, follow up, and return immediately if the palms or soles turn yellow.",
+      "signs": [
+        "severe_jaundice",
+        "jaundice"
+      ],
+      "keywords": [
+        "yellow",
+        "jaundice",
+        "palms",
+        "soles",
+        "eyes"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Check if palms and soles are yellow and tell the doctor.",
+          "Keep breastfeeding often.",
+          "If palms/soles are yellow or baby is under 1 day old — go to the PHC now."
+        ],
+        "hi": [
+          "देखें कि हथेलियाँ और तलवे पीले हैं या नहीं, डॉक्टर को बताएँ।",
+          "बार-बार स्तनपान कराते रहें।",
+          "हथेली/तलवे पीले हों या बच्चा 1 दिन से छोटा हो — अभी PHC जाएँ।"
+        ],
+        "ta": [
+          "உள்ளங்கை, உள்ளங்கால் மஞ்சளா என்று பார்த்து மருத்துவரிடம் சொல்லுங்கள்.",
+          "அடிக்கடி தாய்ப்பால் கொடுங்கள்.",
+          "உள்ளங்கை/கால் மஞ்சளாக இருந்தால் அல்லது 1 நாளுக்கும் குறைவான குழந்தை என்றால் — உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "pre-referral-care",
+      "title": "Keeping a sick young infant safe during referral",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Home Based Newborn Care (HBNC) operational guidelines",
+        "year": 2014,
+        "url": null
+      },
+      "summary": "When a sick newborn is referred, keep the baby warm (skin-to-skin contact with the mother), continue breastfeeding if the baby is able to feed, and arrange transport to the referral facility without delay.",
+      "action": "Arrange government referral transport where available (for example 102 or 108) and inform the receiving facility.",
+      "signs": [],
+      "keywords": [
+        "refer",
+        "referral",
+        "transport",
+        "ambulance",
+        "warm"
+      ],
+      "boostForLevels": [
+        "URGENT"
+      ],
+      "population": "young_infant",
+      "steps": {
+        "en": [
+          "Go to the PHC now — do not wait.",
+          "Keep the baby warm (skin-to-skin with mother, covered head).",
+          "Keep breastfeeding on the way if the baby can feed."
+        ],
+        "hi": [
+          "अभी PHC जाएँ — इंतज़ार न करें।",
+          "बच्चे को गर्म रखें (माँ से त्वचा से त्वचा, सिर ढका हुआ)।",
+          "अगर बच्चा पी सके तो रास्ते में स्तनपान जारी रखें।"
+        ],
+        "ta": [
+          "உடனே PHC-க்குச் செல்லுங்கள் — காத்திருக்க வேண்டாம்.",
+          "குழந்தையைச் சூடாக வைத்திருங்கள் (தாயுடன் தோலோடு தோல், தலையை மூடி).",
+          "குழந்தை குடிக்க முடிந்தால் வழியில் தாய்ப்பால் தொடருங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "hbnc-home-visits",
+      "title": "Home-based newborn care visits by ASHAs",
+      "source": {
+        "publisher": "Ministry of Health and Family Welfare, Government of India",
+        "document": "Home Based Newborn Care (HBNC) operational guidelines",
+        "year": 2014,
+        "url": null
+      },
+      "summary": "ASHAs make scheduled home visits during the first six weeks of life to check the newborn for danger signs, support breastfeeding and warmth, and refer sick newborns.",
+      "action": "Continue scheduled visits and teach the family the danger signs that need immediate care.",
+      "signs": [],
+      "keywords": [
+        "visit",
+        "home visit",
+        "newborn",
+        "schedule"
+      ],
+      "boostForLevels": [
+        "ROUTINE"
+      ],
+      "population": "young_infant"
+    },
+    {
+      "id": "imnci-general-danger",
+      "title": "General danger signs, child 2 months to 5 years",
+      "source": {
+        "publisher": "IMNCI (MoHFW)",
+        "document": "IMNCI (MoHFW) — General danger signs, child 2 months to 5 years"
+      },
+      "summary": "A child who is unable to drink or breastfeed, vomits everything, has had convulsions, or is lethargic or unconscious has a general danger sign and needs urgent referral.",
+      "action": "Go to the PHC now. Keep the child lying on the side if drowsy or fitting. Do not force food or water into a child who cannot swallow.",
+      "signs": [
+        "convulsions",
+        "lethargic",
+        "unable_to_drink",
+        "vomits_everything"
+      ],
+      "keywords": [
+        "child",
+        "unable to drink",
+        "not feeding",
+        "vomits everything",
+        "convulsions",
+        "lethargic",
+        "unconscious"
+      ],
+      "population": "child",
+      "steps": {
+        "en": [
+          "Go to the PHC now.",
+          "Keep the child lying on the side if drowsy or fitting.",
+          "Do not force food or water into a child who cannot swallow."
+        ],
+        "hi": [
+          "अभी PHC जाएँ।",
+          "बच्चा सुस्त हो या दौरा पड़ रहा हो तो करवट से लिटाएँ।",
+          "जो बच्चा निगल नहीं पा रहा उसे ज़बरदस्ती खाना-पानी न दें।"
+        ],
+        "ta": [
+          "உடனே PHC செல்லுங்கள்.",
+          "குழந்தை மயக்கமாக அல்லது வலிப்புடன் இருந்தால் பக்கவாட்டில் படுக்க வையுங்கள்.",
+          "விழுங்க முடியாத குழந்தைக்கு வலுக்கட்டாயமாக உணவு/நீர் கொடுக்க வேண்டாம்."
+        ]
+      }
+    },
+    {
+      "id": "imnci-pneumonia",
+      "title": "Cough or difficult breathing",
+      "source": {
+        "publisher": "IMNCI (MoHFW)",
+        "document": "IMNCI (MoHFW) — Cough or difficult breathing"
+      },
+      "summary": "Fast breathing for age, chest indrawing, or stridor in a calm child suggests pneumonia or severe pneumonia. Chest indrawing or any danger sign requires urgent referral.",
+      "action": "Count breaths for one full minute and tell the doctor. Go to the PHC now if the chest pulls in or the child cannot drink. Keep the child upright and keep giving fluids if they can drink.",
+      "signs": [
+        "difficult_breathing"
+      ],
+      "keywords": [
+        "cough",
+        "fast breathing",
+        "difficult breathing",
+        "chest indrawing",
+        "pneumonia",
+        "breathless"
+      ],
+      "population": "child",
+      "steps": {
+        "en": [
+          "Count breaths for one full minute and tell the doctor.",
+          "Go to the PHC now if the chest pulls in or the child cannot drink.",
+          "Keep the child upright and keep giving fluids if they can drink."
+        ],
+        "hi": [
+          "एक मिनट तक साँसें गिनें और डॉक्टर को बताएँ।",
+          "अगर छाती अंदर धँसे या बच्चा पी न सके तो अभी PHC जाएँ।",
+          "बच्चे को सीधा बिठाएँ और पी सके तो तरल देते रहें।"
+        ],
+        "ta": [
+          "ஒரு நிமிடம் முழுவதும் மூச்சை எண்ணி மருத்துவரிடம் சொல்லுங்கள்.",
+          "நெஞ்சு உள்ளே இழுத்தால் அல்லது குடிக்க முடியாவிட்டால் உடனே PHC செல்லுங்கள்.",
+          "குழந்தையை நிமிர்ந்து உட்கார வைத்து, குடிக்க முடிந்தால் திரவம் கொடுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "imnci-diarrhoea",
+      "title": "Diarrhoea and dehydration",
+      "source": {
+        "publisher": "IMNCI (MoHFW)",
+        "document": "IMNCI (MoHFW) — Diarrhoea and dehydration"
+      },
+      "summary": "Diarrhoea with lethargy, sunken eyes, inability to drink, or very slow skin pinch indicates severe dehydration requiring urgent care. Blood in stool indicates dysentery. Diarrhoea without these signs is managed with ORS and zinc per protocol.",
+      "action": "Give ORS sips often and keep breastfeeding. Tell the doctor how many stools today and if there is blood. Go to the PHC now if the child is very sleepy, eyes are sunken, or cannot drink.",
+      "signs": [
+        "diarrhoea",
+        "dehydration",
+        "blood_in_stool"
+      ],
+      "keywords": [
+        "diarrhoea",
+        "loose stools",
+        "dehydration",
+        "sunken eyes",
+        "blood in stool",
+        "ors",
+        "zinc"
+      ],
+      "population": "under5",
+      "steps": {
+        "en": [
+          "Give ORS sips often and keep breastfeeding.",
+          "Tell the doctor how many stools today and if there is blood.",
+          "Go to the PHC now if the child is very sleepy, eyes are sunken, or cannot drink."
+        ],
+        "hi": [
+          "ORS थोड़ा-थोड़ा बार-बार दें और स्तनपान जारी रखें।",
+          "डॉक्टर को बताएँ आज कितने दस्त हुए और खून है या नहीं।",
+          "बच्चा बहुत सुस्त हो, आँखें धँसी हों या पी न सके तो अभी PHC जाएँ।"
+        ],
+        "ta": [
+          "ORS அடிக்கடி சிறிது சிறிதாகக் கொடுங்கள், தாய்ப்பால் தொடருங்கள்.",
+          "இன்று எத்தனை முறை பேதி, ரத்தம் உள்ளதா என்று மருத்துவரிடம் சொல்லுங்கள்.",
+          "குழந்தை மிகவும் சோர்வாக, கண்கள் குழி விழுந்து அல்லது குடிக்க முடியாமல் இருந்தால் உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "imnci-fever",
+      "title": "Fever",
+      "source": {
+        "publisher": "IMNCI (MoHFW)",
+        "document": "IMNCI (MoHFW) — Fever"
+      },
+      "summary": "Fever with any general danger sign or stiff neck indicates very severe febrile disease needing urgent referral. Fever lasting more than 7 days, or in a malaria-risk area, needs testing and doctor review.",
+      "action": "Measure temperature if you have a thermometer and tell the doctor. Keep giving fluids. Go to the PHC now if there is a stiff neck, fits, or the patient cannot drink.",
+      "signs": [
+        "fever"
+      ],
+      "keywords": [
+        "fever",
+        "hot",
+        "temperature",
+        "stiff neck",
+        "malaria"
+      ],
+      "population": "child",
+      "steps": {
+        "en": [
+          "Measure temperature if you have a thermometer and tell the doctor.",
+          "Keep giving fluids.",
+          "Go to the PHC now if there is a stiff neck, fits, or the patient cannot drink."
+        ],
+        "hi": [
+          "थर्मामीटर हो तो तापमान नापें और डॉक्टर को बताएँ।",
+          "तरल देते रहें।",
+          "गर्दन अकड़ी हो, दौरा पड़े या मरीज़ पी न सके तो अभी PHC जाएँ।"
+        ],
+        "ta": [
+          "வெப்பமானி இருந்தால் வெப்பநிலையை அளந்து மருத்துவரிடம் சொல்லுங்கள்.",
+          "திரவம் கொடுத்துக்கொண்டே இருங்கள்.",
+          "கழுத்து விறைப்பு, வலிப்பு அல்லது குடிக்க முடியாமல் இருந்தால் உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-anc-danger",
+      "title": "Danger signs in pregnancy (ANC)",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Danger signs in pregnancy (ANC)"
+      },
+      "summary": "During pregnancy, vaginal bleeding, convulsions, severe headache with blurred vision, high fever, severe abdominal pain, swelling of face and hands, or reduced fetal movement are danger signs requiring urgent facility care.",
+      "action": "Take her to the nearest facility with delivery care now (call 108). Let her lie on her left side on the way. Tell the doctor when the problem started.",
+      "signs": [
+        "preg_bleeding",
+        "preg_headache_vision",
+        "preg_reduced_movement",
+        "preg_swelling",
+        "convulsions",
+        "fever"
+      ],
+      "keywords": [
+        "pregnancy",
+        "pregnant",
+        "bleeding",
+        "headache",
+        "blurred vision",
+        "convulsions",
+        "swelling",
+        "reduced fetal movement",
+        "fever"
+      ],
+      "population": "pregnancy",
+      "steps": {
+        "en": [
+          "Take her to the nearest facility with delivery care now (call 108).",
+          "Let her lie on her left side on the way.",
+          "Tell the doctor when the problem started."
+        ],
+        "hi": [
+          "अभी नज़दीकी प्रसव सुविधा वाले केंद्र ले जाएँ (108 पर कॉल करें)।",
+          "रास्ते में उन्हें बाईं करवट लिटाएँ।",
+          "डॉक्टर को बताएँ कि समस्या कब शुरू हुई।"
+        ],
+        "ta": [
+          "உடனே அருகிலுள்ள பிரசவ வசதி உள்ள மையத்துக்கு அழைத்துச் செல்லுங்கள் (108 அழையுங்கள்).",
+          "வழியில் இடது பக்கமாகப் படுக்க வையுங்கள்.",
+          "பிரச்சனை எப்போது தொடங்கியது என்று மருத்துவரிடம் சொல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-snakebite",
+      "title": "Standard treatment guidelines: Snake bite",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Standard treatment guidelines: Snake bite"
+      },
+      "summary": "All snake bites are treated as emergencies. Immobilise the limb, keep the patient calm, and transport immediately to a facility with anti-snake venom. Avoid cutting, sucking, or tight tourniquets.",
+      "action": "Call 108 and go to a hospital with anti-snake venom now. Keep the bitten limb still and the patient calm. Do not cut, suck or tie the bite tightly.",
+      "signs": [
+        "snake_bite"
+      ],
+      "keywords": [
+        "snake bite",
+        "snake",
+        "bite",
+        "envenomation"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Call 108 and go to a hospital with anti-snake venom now.",
+          "Keep the bitten limb still and the patient calm.",
+          "Do not cut, suck or tie the bite tightly."
+        ],
+        "hi": [
+          "108 पर कॉल करें और अभी एंटी-स्नेक वेनम वाले अस्पताल जाएँ।",
+          "काटे गए अंग को स्थिर रखें और मरीज़ को शांत रखें।",
+          "काटने की जगह न काटें, न चूसें, न कसकर बाँधें।"
+        ],
+        "ta": [
+          "108 அழைத்து பாம்பு விஷ முறிவு மருந்து உள்ள மருத்துவமனைக்கு உடனே செல்லுங்கள்.",
+          "கடிபட்ட உறுப்பை அசையாமல் வைத்து நோயாளியை அமைதியாக வையுங்கள்.",
+          "கடித்த இடத்தை வெட்டவோ, உறிஞ்சவோ, இறுக்கிக் கட்டவோ வேண்டாம்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-rabies",
+      "title": "National guidelines for rabies prophylaxis",
+      "source": {
+        "publisher": "MoHFW / NCDC",
+        "document": "MoHFW / NCDC — National guidelines for rabies prophylaxis"
+      },
+      "summary": "Animal bites need immediate thorough wound washing with soap and running water for 15 minutes and same-day assessment for rabies vaccine and immunoglobulin based on exposure category.",
+      "action": "Wash the wound with soap and running water for 15 minutes now. Go to the PHC today for the rabies vaccine. Do not apply chilli, oil or cover the wound tightly.",
+      "signs": [
+        "animal_bite"
+      ],
+      "keywords": [
+        "dog bite",
+        "animal bite",
+        "monkey bite",
+        "rabies",
+        "scratch"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Wash the wound with soap and running water for 15 minutes now.",
+          "Go to the PHC today for the rabies vaccine.",
+          "Do not apply chilli, oil or cover the wound tightly."
+        ],
+        "hi": [
+          "घाव को अभी 15 मिनट साबुन और बहते पानी से धोएँ।",
+          "आज ही रेबीज़ टीके के लिए PHC जाएँ।",
+          "घाव पर मिर्च, तेल न लगाएँ, कसकर न ढकें।"
+        ],
+        "ta": [
+          "காயத்தை உடனே 15 நிமிடம் சோப்பு மற்றும் ஓடும் நீரில் கழுவுங்கள்.",
+          "இன்றே ரேபிஸ் தடுப்பூசிக்கு PHC செல்லுங்கள்.",
+          "காயத்தில் மிளகாய், எண்ணெய் தடவ வேண்டாம், இறுக்கி மூட வேண்டாம்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-chest-pain",
+      "title": "Standard treatment guidelines: Acute chest pain",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Standard treatment guidelines: Acute chest pain"
+      },
+      "summary": "Sudden chest pain, especially with sweating, breathlessness or pain spreading to the arm or jaw, is treated as a possible heart emergency requiring immediate transfer.",
+      "action": "Call 108 now. Keep the patient resting and sitting up. Note when the pain started and tell the doctor.",
+      "signs": [
+        "chest_pain"
+      ],
+      "keywords": [
+        "chest pain",
+        "heart",
+        "sweating",
+        "breathless"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Call 108 now.",
+          "Keep the patient resting and sitting up.",
+          "Note when the pain started and tell the doctor."
+        ],
+        "hi": [
+          "अभी 108 पर कॉल करें।",
+          "मरीज़ को आराम से बैठा कर रखें।",
+          "दर्द कब शुरू हुआ नोट करें और डॉक्टर को बताएँ।"
+        ],
+        "ta": [
+          "உடனே 108 அழையுங்கள்.",
+          "நோயாளியை ஓய்வாக உட்கார வையுங்கள்.",
+          "வலி எப்போது தொடங்கியது என்று குறித்து மருத்துவரிடம் சொல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-burns",
+      "title": "National programme for prevention of burn injuries",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — National programme for prevention of burn injuries"
+      },
+      "summary": "Cool the burn with clean running water for 20 minutes. Burns that are large, deep, on the face, hands, feet or genitals, electrical, or in children and elderly need referral.",
+      "action": "Cool the burn under clean running water for 20 minutes. Cover loosely with a clean cloth; do not apply toothpaste or oil. Go to the PHC now if the burn is large, deep, or on face/hands.",
+      "signs": [
+        "burn"
+      ],
+      "keywords": [
+        "burn",
+        "scald",
+        "fire"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Cool the burn under clean running water for 20 minutes.",
+          "Cover loosely with a clean cloth; do not apply toothpaste or oil.",
+          "Go to the PHC now if the burn is large, deep, or on face/hands."
+        ],
+        "hi": [
+          "जले हिस्से को 20 मिनट साफ़ बहते पानी में ठंडा करें।",
+          "साफ़ कपड़े से ढीला ढकें; टूथपेस्ट या तेल न लगाएँ।",
+          "जलन बड़ी, गहरी या चेहरे/हाथ पर हो तो अभी PHC जाएँ।"
+        ],
+        "ta": [
+          "தீக்காயத்தை 20 நிமிடம் சுத்தமான ஓடும் நீரில் குளிர்விக்கவும்.",
+          "சுத்தமான துணியால் தளர்வாக மூடுங்கள்; பற்பசை, எண்ணெய் தடவ வேண்டாம்.",
+          "காயம் பெரியதாக, ஆழமாக அல்லது முகம்/கையில் இருந்தால் உடனே PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-wound",
+      "title": "Standard treatment guidelines: Wound infection / cellulitis",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Standard treatment guidelines: Wound infection / cellulitis"
+      },
+      "summary": "A wound with pus, spreading redness, warmth or red streaks, especially with fever, suggests infection needing clinical review; fever or rapidly spreading redness needs urgent assessment.",
+      "action": "Send the wound photo to the doctor today. Keep the wound clean and covered with a clean dressing. Mark the edge of the redness with a pen to see if it spreads.",
+      "signs": [
+        "wound_infected"
+      ],
+      "keywords": [
+        "wound",
+        "pus",
+        "spreading redness",
+        "cellulitis",
+        "infection"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Send the wound photo to the doctor today.",
+          "Keep the wound clean and covered with a clean dressing.",
+          "Mark the edge of the redness with a pen to see if it spreads."
+        ],
+        "hi": [
+          "आज ही डॉक्टर को घाव की फ़ोटो भेजें।",
+          "घाव को साफ़ पट्टी से ढक कर रखें।",
+          "लाली की सीमा पर पेन से निशान लगाएँ ताकि पता चले फैल रही है या नहीं।"
+        ],
+        "ta": [
+          "இன்றே காயத்தின் புகைப்படத்தை மருத்துவருக்கு அனுப்புங்கள்.",
+          "காயத்தைச் சுத்தமான கட்டுடன் மூடி வையுங்கள்.",
+          "சிவப்பு பரவுகிறதா என்று பார்க்க அதன் ஓரத்தில் பேனாவால் குறியிடுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "mohfw-rash-fever",
+      "title": "Fever with rash (measles, chickenpox surveillance)",
+      "source": {
+        "publisher": "MoHFW / IDSP",
+        "document": "MoHFW / IDSP — Fever with rash (measles, chickenpox surveillance)"
+      },
+      "summary": "Fever with rash should be reviewed by a doctor and may need public-health reporting (e.g. measles). Rash without fever and without danger signs is usually reviewed routinely.",
+      "action": "Send a clear photo of the rash to the doctor. Keep the patient away from pregnant women and infants until reviewed. Give fluids; go to the PHC if breathing is hard or the patient is very drowsy.",
+      "signs": [
+        "rash"
+      ],
+      "keywords": [
+        "rash",
+        "spots",
+        "fever with rash",
+        "measles",
+        "chickenpox",
+        "itching"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Send a clear photo of the rash to the doctor.",
+          "Keep the patient away from pregnant women and infants until reviewed.",
+          "Give fluids; go to the PHC if breathing is hard or the patient is very drowsy."
+        ],
+        "hi": [
+          "दाने की साफ़ फ़ोटो डॉक्टर को भेजें।",
+          "जाँच होने तक मरीज़ को गर्भवती महिलाओं और शिशुओं से दूर रखें।",
+          "तरल दें; साँस लेने में दिक्कत हो या मरीज़ बहुत सुस्त हो तो PHC जाएँ।"
+        ],
+        "ta": [
+          "தடிப்பின் தெளிவான புகைப்படத்தை மருத்துவருக்கு அனுப்புங்கள்.",
+          "மருத்துவர் பார்க்கும் வரை கர்ப்பிணிகள், குழந்தைகளிடமிருந்து விலக்கி வையுங்கள்.",
+          "திரவம் கொடுங்கள்; மூச்சு திணறல் அல்லது மிகுந்த சோர்வு இருந்தால் PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "skin-severe",
+      "title": "Severe skin conditions (blistering, peeling, raw skin)",
+      "source": {
+        "publisher": "IMNCI (MoHFW) / standard treatment guidance",
+        "document": "IMNCI (MoHFW) / standard treatment guidance — Severe skin conditions (blistering, peeling, raw skin)"
+      },
+      "summary": "Widespread blistering, peeling or raw (denuded) skin, especially in a newborn or young infant, or with fever or poor feeding, risks serious infection and fluid loss and needs urgent referral. Localised blisters without danger signs need same-day clinical review.",
+      "action": "Go to the PHC now if the baby is under 2 months, or has fever or is not feeding. Cover the raw skin loosely with a clean, dry cloth; do not burst blisters or apply anything. Keep the baby warm and keep breastfeeding.",
+      "signs": [
+        "skin_blisters"
+      ],
+      "keywords": [
+        "blisters",
+        "blistering",
+        "peeling skin",
+        "raw skin",
+        "skin loss",
+        "newborn skin",
+        "skin infection",
+        "fever"
+      ],
+      "population": "any",
+      "steps": {
+        "en": [
+          "Go to the PHC now if the baby is under 2 months, or has fever or is not feeding.",
+          "Cover the raw skin loosely with a clean, dry cloth; do not burst blisters or apply anything.",
+          "Keep the baby warm and keep breastfeeding."
+        ],
+        "hi": [
+          "अगर बच्चा 2 महीने से छोटा है, या बुखार है या दूध नहीं पी रहा — अभी PHC जाएँ।",
+          "छिली त्वचा को साफ़, सूखे कपड़े से ढीला ढकें; छाले न फोड़ें, कुछ न लगाएँ।",
+          "बच्चे को गर्म रखें और स्तनपान जारी रखें।"
+        ],
+        "ta": [
+          "குழந்தை 2 மாதத்துக்கும் குறைவானது, காய்ச்சல் அல்லது பால் குடிக்கவில்லை என்றால் — உடனே PHC செல்லுங்கள்.",
+          "உரிந்த தோலைச் சுத்தமான, உலர்ந்த துணியால் தளர்வாக மூடுங்கள்; கொப்புளங்களை உடைக்கவோ எதுவும் தடவவோ வேண்டாம்.",
+          "குழந்தையைச் சூடாக வைத்து, தாய்ப்பால் தொடருங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "adult-emergency",
+      "title": "Standard treatment guidelines: emergency danger signs (older children and adults)",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Standard treatment guidelines: emergency danger signs (older children and adults)"
+      },
+      "summary": "In older children and adults, convulsions, unconsciousness or confusion, severe difficulty breathing, or inability to drink are emergency signs needing immediate transfer to a facility.",
+      "action": "Call 108 and take the patient to the hospital now. If fitting or drowsy, lay the patient on their side and keep the airway clear. Do not give food or water to a patient who cannot swallow.",
+      "signs": [
+        "convulsions",
+        "lethargic",
+        "difficult_breathing",
+        "vomits_everything"
+      ],
+      "keywords": [
+        "convulsions",
+        "fits",
+        "unconscious",
+        "very drowsy",
+        "difficult breathing",
+        "breathless",
+        "adult",
+        "emergency"
+      ],
+      "population": "over5",
+      "steps": {
+        "en": [
+          "Call 108 and take the patient to the hospital now.",
+          "If fitting or drowsy, lay the patient on their side and keep the airway clear.",
+          "Do not give food or water to a patient who cannot swallow."
+        ],
+        "hi": [
+          "108 पर कॉल करें और मरीज़ को अभी अस्पताल ले जाएँ।",
+          "दौरा पड़ रहा हो या बेहोशी हो तो करवट से लिटाएँ, साँस का रास्ता साफ़ रखें।",
+          "जो मरीज़ निगल नहीं पा रहा उसे खाना-पानी न दें।"
+        ],
+        "ta": [
+          "108 அழைத்து நோயாளியை உடனே மருத்துவமனைக்கு அழைத்துச் செல்லுங்கள்.",
+          "வலிப்பு அல்லது மயக்கம் இருந்தால் பக்கவாட்டில் படுக்க வைத்து மூச்சுப்பாதையைத் தெளிவாக வையுங்கள்.",
+          "விழுங்க முடியாத நோயாளிக்கு உணவு, நீர் கொடுக்க வேண்டாம்."
+        ]
+      }
+    },
+    {
+      "id": "adult-fever",
+      "title": "Fever in older children and adults (malaria, dengue testing)",
+      "source": {
+        "publisher": "MoHFW / NVBDCP",
+        "document": "MoHFW / NVBDCP — Fever in older children and adults (malaria, dengue testing)"
+      },
+      "summary": "Fever in older children and adults should be tested for malaria (and dengue where common), especially in hilly and forest areas. Fever with danger signs, bleeding, severe headache with stiff neck, or lasting more than 3 days needs doctor review the same day.",
+      "action": "Do a malaria rapid test if you have the kit and tell the doctor the result. Give plenty of fluids and let the patient rest. Go to the PHC today if fever lasts more than 3 days, or now if there is bleeding, stiff neck or confusion.",
+      "signs": [
+        "fever"
+      ],
+      "keywords": [
+        "fever",
+        "hot",
+        "temperature",
+        "adult",
+        "malaria",
+        "dengue",
+        "chills"
+      ],
+      "population": "over5",
+      "steps": {
+        "en": [
+          "Do a malaria rapid test if you have the kit and tell the doctor the result.",
+          "Give plenty of fluids and let the patient rest.",
+          "Go to the PHC today if fever lasts more than 3 days, or now if there is bleeding, stiff neck or confusion."
+        ],
+        "hi": [
+          "किट हो तो मलेरिया रैपिड टेस्ट करें और नतीजा डॉक्टर को बताएँ।",
+          "खूब तरल दें और मरीज़ को आराम करने दें।",
+          "बुखार 3 दिन से ज़्यादा हो तो आज PHC जाएँ; खून आए, गर्दन अकड़े या भ्रम हो तो अभी जाएँ।"
+        ],
+        "ta": [
+          "கிட் இருந்தால் மலேரியா விரைவுப் பரிசோதனை செய்து முடிவை மருத்துவரிடம் சொல்லுங்கள்.",
+          "நிறைய திரவம் கொடுத்து ஓய்வெடுக்க விடுங்கள்.",
+          "காய்ச்சல் 3 நாளுக்கு மேல் இருந்தால் இன்றே PHC செல்லுங்கள்; ரத்தம், கழுத்து விறைப்பு அல்லது குழப்பம் இருந்தால் உடனே செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "adult-diarrhoea",
+      "title": "Standard treatment guidelines: acute diarrhoea in older children and adults",
+      "source": {
+        "publisher": "MoHFW",
+        "document": "MoHFW — Standard treatment guidelines: acute diarrhoea in older children and adults"
+      },
+      "summary": "Acute diarrhoea in older children and adults is managed with ORS and continued feeding. Blood in stool, high fever, signs of dehydration (very thirsty, little urine, dizziness), or diarrhoea lasting more than 3 days needs doctor review.",
+      "action": "Give ORS after every loose stool and keep eating normal food. Tell the doctor how many stools today and if there is blood. Go to the PHC if there is blood, high fever, very little urine or dizziness.",
+      "signs": [
+        "diarrhoea",
+        "dehydration",
+        "blood_in_stool"
+      ],
+      "keywords": [
+        "diarrhoea",
+        "loose stools",
+        "loose motion",
+        "dehydration",
+        "adult",
+        "ors"
+      ],
+      "population": "over5",
+      "steps": {
+        "en": [
+          "Give ORS after every loose stool and keep eating normal food.",
+          "Tell the doctor how many stools today and if there is blood.",
+          "Go to the PHC if there is blood, high fever, very little urine or dizziness."
+        ],
+        "hi": [
+          "हर दस्त के बाद ORS दें और सामान्य खाना जारी रखें।",
+          "डॉक्टर को बताएँ आज कितने दस्त हुए और खून है या नहीं।",
+          "खून आए, तेज़ बुखार हो, पेशाब बहुत कम हो या चक्कर आएँ तो PHC जाएँ।"
+        ],
+        "ta": [
+          "ஒவ்வொரு பேதிக்குப் பிறகும் ORS கொடுத்து வழக்கமான உணவைத் தொடருங்கள்.",
+          "இன்று எத்தனை முறை பேதி, ரத்தம் உள்ளதா என்று மருத்துவரிடம் சொல்லுங்கள்.",
+          "ரத்தம், அதிக காய்ச்சல், மிகக் குறைவான சிறுநீர் அல்லது தலைச்சுற்றல் இருந்தால் PHC செல்லுங்கள்."
+        ]
+      }
+    },
+    {
+      "id": "general-review",
+      "title": "unrecognised case",
+      "source": {
+        "publisher": "Aarogya-Vision safety policy",
+        "document": "Aarogya-Vision safety policy — unrecognised case"
+      },
+      "summary": "When no specific danger sign is recognised the case is never auto-cleared; it is queued for doctor review the same day.",
+      "action": "The doctor will review this case today. If the patient gets worse, cannot drink, has fits or is very sleepy — go to the PHC at once.",
+      "signs": [],
+      "keywords": [],
+      "population": "any",
+      "steps": {
+        "en": [
+          "The doctor will review this case today.",
+          "If the patient gets worse, cannot drink, has fits or is very sleepy — go to the PHC at once."
+        ],
+        "hi": [
+          "डॉक्टर आज यह केस देखेंगे।",
+          "मरीज़ की हालत बिगड़े, पी न सके, दौरा पड़े या बहुत सुस्त हो — तुरंत PHC जाएँ।"
+        ],
+        "ta": [
+          "மருத்துவர் இன்று இந்தக் கேஸைப் பார்ப்பார்.",
+          "நிலை மோசமானால், குடிக்க முடியாவிட்டால், வலிப்பு அல்லது மிகுந்த சோர்வு இருந்தால் — உடனே PHC செல்லுங்கள்."
+        ]
+      },
+      "fallback": true
+    }
+  ]
+}

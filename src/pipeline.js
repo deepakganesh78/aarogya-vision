@@ -1,6 +1,9 @@
 import crypto from 'node:crypto';
 import { mergeAiFindings, triageAssessment } from '../public/shared/triage.js';
 import { applyAutofill } from './autofill.js';
+import { saveFhirBundle } from './fhir.js';
+import { workerSteps } from './guidelines.js';
+import { cleanAiOutput } from './safety.js';
 
 function sha256(text) {
   return crypto.createHash('sha256').update(text).digest('hex');
@@ -18,7 +21,7 @@ function safeError(err) {
  *   3. flag urgency    - mergeAiFindings(): deterministic rules; AI can only raise the level
  *   4. build record    - persist the structured case for the doctor dashboard
  */
-export function createProcessor({ store, provider, guidelines, audit, analytics, concurrency = 2, logger = console }) {
+export function createProcessor({ store, provider, guidelines, audit, analytics, events, dataDir, concurrency = 2, logger = console }) {
   const queue = [];
   const queued = new Set();
   let active = 0;
@@ -75,7 +78,9 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
     const asSubmitted = { ...record, patient: { ageDays: null, sex: 'unknown', ...submitted.patient }, assessment: { ...submitted.assessment } };
     let ai;
 
-    if (!provider) {
+    if (record.ai?.status === 'skipped') {
+      ai = record.ai;
+    } else if (!provider) {
       ai = { status: 'disabled', reason: 'No AI provider configured' };
     } else {
       await store.update(id, (r) => {
@@ -84,11 +89,15 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
       });
       try {
         const [photo, audio] = await Promise.all([loadMedia(record, 'photo'), loadMedia(record, 'audio')]);
-        const { raw, output } = await provider.analyze({ caseRecord: asSubmitted, photo, audio });
+        const analysed = await provider.analyze({ caseRecord: asSubmitted, photo, audio });
+        const raw = analysed.raw;
+        // No-diagnosis filter on AI text the doctor sees (summary, photo notes, questions).
+        const { output, removed } = cleanAiOutput(analysed.output);
+        if (removed) audit.log({ type: 'ai.safety_filtered', caseId: id, removed });
         ai = {
           status: 'done',
           provider: provider.name,
-          model: provider.model,
+          model: analysed.model || provider.model,
           promptVersion: provider.promptVersion,
           startedAt,
           completedAt: new Date().toISOString(),
@@ -105,8 +114,9 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
     const { patient, assessment, autofill } = applyAutofill(submitted, ai.status === 'done' ? ai.output : null);
     const triage = mergeAiFindings(triageAssessment({ patient, assessment, autofill }), ai, { hasMedia });
     const signIds = [...new Set(triage.reasons.filter((r) => r.signId).map((r) => r.signId))];
+    const topSignIds = [...new Set(triage.reasons.filter((r) => r.signId && r.level === triage.level).map((r) => r.signId))];
     const text = [ai.output?.transcriptEnglish, assessment.notes].filter(Boolean).join(' ');
-    const refs = guidelines.retrieve({ signIds, text, level: triage.level });
+    const refs = guidelines.retrieve({ signIds, topSignIds, text, level: triage.level, context: triage.context });
 
     const updated = await store.update(id, (r) => {
       r.patient = patient;
@@ -115,10 +125,23 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
       r.ai = ai;
       r.triage = triage;
       r.guidelines = refs;
+      r.workerSteps = workerSteps(refs);
       if (r.status === 'received' || r.status === 'processing') r.status = 'awaiting_review';
       r.history.push({ at: new Date().toISOString(), event: ai.status === 'done' ? 'ai_summary_ready' : `ai_${ai.status}`, by: 'system' });
     });
     audit.log({ type: 'case.triaged', caseId: id, level: triage.level, rulesVersion: triage.rulesVersion, aiStatus: ai.status });
+    if (updated.patient?.id && store.getPatient) {
+      const p = await store.getPatient(updated.patient.id);
+      if (p) await store.putPatient({ ...p, lastLevel: triage.level, lastCaseId: id });
+    }
+    if (dataDir) {
+      try {
+        await saveFhirBundle(dataDir, updated, await store.getAsha?.(updated.worker.id));
+      } catch (err) {
+        logger.error(`FHIR export for ${id} failed: ${safeError(err)}`);
+      }
+    }
+    events?.publish({ type: 'case.triaged', caseId: id, level: triage.level, workerId: updated.worker.id });
     await analytics?.triaged(updated);
   }
 
