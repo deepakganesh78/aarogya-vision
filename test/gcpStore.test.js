@@ -10,42 +10,57 @@ function getPath(obj, dotted) {
 }
 
 function fakeFirestore() {
-  const docs = new Map();
+  // One map per collection (cases, patients, ...); `docs` is the cases collection the tests inspect.
+  const maps = new Map();
+  const mapFor = (name) => {
+    if (!maps.has(name)) maps.set(name, new Map());
+    return maps.get(name);
+  };
+  const docs = mapFor('cases');
   const snap = (data) => ({ exists: data !== undefined, data: () => structuredClone(data) });
 
-  function query(filters = [], order = null, max = Infinity) {
+  function query(store, filters = [], order = null, max = Infinity) {
     return {
-      where: (field, op, value) => query([...filters, { field, op, value }], order, max),
-      orderBy: (field, dir = 'asc') => query(filters, { field, dir }, max),
-      limit: (n) => query(filters, order, n),
+      where: (field, op, value) => query(store, [...filters, { field, op, value }], order, max),
+      orderBy: (field, dir = 'asc') => query(store, filters, { field, dir }, max),
+      limit: (n) => query(store, filters, order, n),
       async get() {
-        let rows = [...docs.values()].filter((d) => filters.every((f) => f.op === '==' && getPath(d, f.field) === f.value));
+        let rows = [...store.values()].filter((d) => filters.every((f) => f.op === '==' && getPath(d, f.field) === f.value));
         if (order) rows.sort((a, b) => (order.dir === 'desc' ? -1 : 1) * String(getPath(a, order.field)).localeCompare(String(getPath(b, order.field))));
         return { docs: rows.slice(0, max).map((d) => ({ data: () => structuredClone(d) })) };
       }
     };
   }
 
-  const collection = {
-    ...query(),
-    doc: (id) => ({
-      id,
-      get: async () => snap(docs.get(id)),
-      create: async (data) => {
-        if (docs.has(id)) throw Object.assign(new Error('ALREADY_EXISTS'), { code: 6 });
-        docs.set(id, structuredClone(data));
-      },
-      delete: async () => docs.delete(id)
-    })
+  const collections = new Map();
+  const collectionFor = (name) => {
+    if (collections.has(name)) return collections.get(name);
+    const store = mapFor(name);
+    const collection = {
+      ...query(store),
+      doc: (id) => ({
+        id,
+        store,
+        get: async () => snap(store.get(id)),
+        create: async (data) => {
+          if (store.has(id)) throw Object.assign(new Error('ALREADY_EXISTS'), { code: 6 });
+          store.set(id, structuredClone(data));
+        },
+        set: async (data) => store.set(id, structuredClone(data)),
+        delete: async () => store.delete(id)
+      })
+    };
+    collections.set(name, collection);
+    return collection;
   };
 
   return {
     docs,
-    collection: () => collection,
+    collection: (name = 'cases') => collectionFor(name),
     async runTransaction(fn) {
       const writes = [];
-      const result = await fn({ get: (ref) => ref.get(), set: (ref, data) => writes.push([ref.id, data]) });
-      for (const [id, data] of writes) docs.set(id, structuredClone(data));
+      const result = await fn({ get: (ref) => ref.get(), set: (ref, data) => writes.push([ref, data]) });
+      for (const [ref, data] of writes) ref.store.set(ref.id, structuredClone(data));
       return result;
     }
   };

@@ -1,8 +1,10 @@
 import crypto from 'node:crypto';
 import { mergeAiFindings, triageAssessment } from '../public/shared/triage.js';
 import { applyAutofill } from './autofill.js';
-import { saveFhirBundle } from './fhir.js';
+import { signLabel } from '../public/shared/dangerSigns.js';
+import { buildFhirBundle, saveFhirBundle } from './fhir.js';
 import { workerSteps } from './guidelines.js';
+import { ragQuery } from './rag.js';
 import { cleanAiOutput } from './safety.js';
 
 function sha256(text) {
@@ -17,11 +19,12 @@ function safeError(err) {
 /**
  * The four pipeline stages map to the deck's reusable skills:
  *   1. read            - provider.analyze(): Gemini reads photo + voice + checklist together
- *   2. find guideline  - guidelines.retrieve(): cite curated MoHFW / WHO guidance
+ *   2. find guideline  - guidelines.retrieve(): cite curated MoHFW / WHO guidance (authoritative);
+ *                        rag.retrieve(): supplementary passages from the guideline PDFs (Vertex AI RAG Engine)
  *   3. flag urgency    - mergeAiFindings(): deterministic rules; AI can only raise the level
- *   4. build record    - persist the structured case for the doctor dashboard
+ *   4. build record    - persist the case, and write it as FHIR R4 (Cloud Healthcare API in production)
  */
-export function createProcessor({ store, provider, guidelines, audit, analytics, events, dataDir, concurrency = 2, logger = console }) {
+export function createProcessor({ store, provider, guidelines, rag, fhirStore, audit, analytics, events, dataDir, concurrency = 2, logger = console }) {
   const queue = [];
   const queued = new Set();
   let active = 0;
@@ -117,6 +120,17 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
     const topSignIds = [...new Set(triage.reasons.filter((r) => r.signId && r.level === triage.level).map((r) => r.signId))];
     const text = [ai.output?.transcriptEnglish, assessment.notes].filter(Boolean).join(' ');
     const refs = guidelines.retrieve({ signIds, topSignIds, text, level: triage.level, context: triage.context });
+    let passages = null;
+    if (rag) {
+      const ctx = triage.context || {};
+      const ageGroup = ctx.pregnant ? 'pregnancy' : ctx.youngInfant ? 'young infant 0-59 days' : ctx.under5 ? 'child under 5' : null;
+      try {
+        passages = await rag.retrieve(ragQuery({ signLabels: signIds.map((s) => signLabel(s)), level: triage.level, ageGroup }));
+        audit.log({ type: 'rag.retrieved', caseId: id, corpus: rag.corpus, count: passages.length });
+      } catch (err) {
+        logger.warn(`RAG retrieval for ${id} failed: ${safeError(err)}`);
+      }
+    }
 
     const updated = await store.update(id, (r) => {
       r.patient = patient;
@@ -125,6 +139,7 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
       r.ai = ai;
       r.triage = triage;
       r.guidelines = refs;
+      if (passages) r.guidelinePassages = passages;
       r.workerSteps = workerSteps(refs);
       if (r.status === 'received' || r.status === 'processing') r.status = 'awaiting_review';
       r.history.push({ at: new Date().toISOString(), event: ai.status === 'done' ? 'ai_summary_ready' : `ai_${ai.status}`, by: 'system' });
@@ -134,12 +149,16 @@ export function createProcessor({ store, provider, guidelines, audit, analytics,
       const p = await store.getPatient(updated.patient.id);
       if (p) await store.putPatient({ ...p, lastLevel: triage.level, lastCaseId: id });
     }
-    if (dataDir) {
-      try {
-        await saveFhirBundle(dataDir, updated, await store.getAsha?.(updated.worker.id));
-      } catch (err) {
-        logger.error(`FHIR export for ${id} failed: ${safeError(err)}`);
+    try {
+      const asha = await store.getAsha?.(updated.worker.id);
+      if (fhirStore) {
+        await fhirStore.upsert(buildFhirBundle(updated, { asha }));
+        audit.log({ type: 'fhir.written', caseId: id });
+      } else if (dataDir) {
+        await saveFhirBundle(dataDir, updated, asha);
       }
+    } catch (err) {
+      logger.error(`FHIR export for ${id} failed: ${safeError(err)}`);
     }
     events?.publish({ type: 'case.triaged', caseId: id, level: triage.level, workerId: updated.worker.id });
     await analytics?.triaged(updated);

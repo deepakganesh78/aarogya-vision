@@ -18,22 +18,22 @@ export const CaseSubmission = z
         at: z.iso.datetime()
       })
       .strict(),
+    // Patient details are required: name, age (value and unit) and sex. Pregnancy is asked only for women.
     patient: z
       .object({
         // Existing patient picked from the worker's list. A new patient has no id yet; the server assigns one.
         id: z.string().regex(/^PT-[0-9A-F]{8}$/).optional(),
-        name: z.string().trim().min(1).max(80).optional(),
-        ageValue: z.number().min(0).max(120).nullable().optional(),
-        ageUnit: z.enum(['days', 'weeks', 'months', 'years']).optional(),
+        name: z.string().trim().min(1).max(80),
+        ageValue: z.number().min(0).max(120),
+        ageUnit: z.enum(['days', 'weeks', 'months', 'years']),
         ageDays: z.number().int().min(0).max(43800).nullable().optional(),
-        sex: z.enum(['female', 'male', 'unknown']).optional(),
+        sex: z.enum(['female', 'male']),
         pregnant: z.boolean().optional(),
         pregnancyMonths: z.number().int().min(1).max(10).nullable().optional(),
         reference: z.string().trim().max(40).optional()
       })
       .strict()
-      .refine((p) => !p.pregnant || p.sex === 'female', { message: 'only a female patient can be pregnant', path: ['pregnant'] })
-      .optional(),
+      .refine((p) => !p.pregnant || p.sex === 'female', { message: 'only a female patient can be pregnant', path: ['pregnant'] }),
     assessment: z
       .object({
         signs: z.object(signsShape).strict().optional(),
@@ -41,14 +41,15 @@ export const CaseSubmission = z
         breathsPerMin: z.number().int().min(0).max(200).nullable().optional(),
         notes: z.string().max(1000).optional(),
         workerFlag: z.boolean().optional(),
-        // Live speech-to-text made on the phone while the worker spoke (Sarvam, local testing only).
+        // Live text made while the worker spoke (Gemini Live), plus the spoken follow-up questions it asked.
         liveTranscript: z
           .object({
             original: z.string().max(4000),
             english: z.string().max(4000),
             language: z.string().max(20).nullable().optional(),
-            provider: z.literal('sarvam'),
-            model: z.string().max(40).nullable().optional()
+            provider: z.literal('gemini-live'),
+            model: z.string().max(40).nullable().optional(),
+            followUp: z.string().max(1000).nullable().optional()
           })
           .strict()
           .optional()
@@ -59,11 +60,52 @@ export const CaseSubmission = z
   })
   .strict();
 
+// The doctor's decision. Medicines are chosen and dosed by the doctor (never suggested by AI); the
+// dashboard also writes them into the instructions so the ASHA receives them in her language.
+const DecisionMedicine = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    dose: z.string().trim().max(60).optional(),
+    how: z.string().trim().max(80).optional(),
+    days: z.number().int().min(1).max(90).nullable().optional()
+  })
+  .strict();
+
 export const DecisionInput = z
   .object({
     outcome: z.enum(['refer_now', 'home_care_follow_up', 'need_more_info', 'no_action']),
     instructions: z.string().trim().min(1).max(1500),
-    followUpDate: z.iso.date().nullable().optional()
+    followUpDate: z.iso.date().nullable().optional(),
+    medicines: z.array(DecisionMedicine).max(8).optional(),
+    referTo: z.string().trim().min(1).max(120).nullable().optional(),
+    // The doctor's own assessment (provisional diagnosis), kept in the record; not sent to the ASHA.
+    assessment: z.string().trim().max(1000).optional()
+  })
+  .strict()
+  .refine((d) => !d.referTo || d.outcome === 'refer_now', { message: 'referTo needs outcome refer_now', path: ['referTo'] });
+
+// The doctor sends the prescribed medicines: one bike collects from each stop, then goes to the patient.
+// Stop and courier names come from the dashboard's (simulated) stock map.
+export const DispatchInput = z
+  .object({
+    stops: z
+      .array(
+        z
+          .object({
+            id: z.string().trim().min(1).max(60),
+            name: z.string().trim().min(1).max(80),
+            kind: z.enum(['phc', 'hwc', 'shop']),
+            items: z.array(z.string().trim().min(1).max(80)).min(1).max(12),
+            km: z.number().min(0).max(500).nullable().optional()
+          })
+          .strict()
+      )
+      .min(1)
+      .max(6),
+    courier: z.object({ id: z.string().trim().min(1).max(20), name: z.string().trim().min(1).max(60) }).strict(),
+    distanceKm: z.number().min(0).max(500),
+    etaMin: z.number().int().min(0).max(600),
+    missing: z.array(z.string().trim().min(1).max(80)).max(12).optional()
   })
   .strict();
 

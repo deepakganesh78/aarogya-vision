@@ -1,0 +1,12 @@
+{
+  "hosting": {
+    "public": "deploy/firebase-public",
+    "ignore": ["firebase.json", "**/.*"],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": { "serviceId": "aarogya-vision", "region": "asia-south1" }
+      }
+    ]
+  }
+}

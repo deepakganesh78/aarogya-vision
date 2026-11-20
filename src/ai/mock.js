@@ -88,5 +88,11 @@ export function createMockProvider() {
     return `[MOCK ${lang} translation] ${text}`;
   }
 
-  return { name: 'mock', model: 'mock', promptVersion: PROMPT_VERSION, analyze, translate };
+  // No image analysis: a fixed, clearly labelled answer so demos and tests are deterministic.
+  async function classifySkin({ photo }) {
+    if (!photo) throw new Error('no photo');
+    return { pattern: 'blisters_pustules', confidence: 'low', features: ['[MOCK] no real image analysis was performed'], model: 'mock' };
+  }
+
+  return { name: 'mock', model: 'mock', promptVersion: PROMPT_VERSION, analyze, translate, classifySkin };
 }

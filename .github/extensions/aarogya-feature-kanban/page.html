@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>Aarogya-Vision feature board</title>
+    <link rel="stylesheet" href="/board.css">
+    <script type="module" src="/board-client.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">PROJECT PROGRESS</p>
+          <h1>Aarogya-Vision</h1>
+          <p class="subtitle">Feature board · seeded from the project knowledge base</p>
+        </div>
+        <div class="project-mark" aria-hidden="true">AV</div>
+      </header>
+
+      <section class="summary" aria-label="Board summary">
+        <div class="summary-copy">
+          <h2>Build status</h2>
+          <p>Track what is verified, active, and still planned.</p>
+        </div>
+        <div id="counts" class="count-list" aria-live="polite"></div>
+      </section>
+
+      <section class="board" aria-label="Feature kanban board">
+        <div id="lanes" class="lanes" aria-live="polite"></div>
+      </section>
+
+      <details class="add-panel">
+        <summary>Add a feature or milestone</summary>
+        <form id="add-form" class="add-form">
+          <div class="field">
+            <label for="new-title">Title</label>
+            <input id="new-title" name="title" maxlength="100" required>
+          </div>
+          <div class="field">
+            <label for="new-description">Description</label>
+            <textarea id="new-description" name="description" rows="2" maxlength="500" required></textarea>
+          </div>
+          <div class="field field-status">
+            <label for="new-status">Column</label>
+            <select id="new-status" name="status">
+              <option value="todo">To do</option>
+              <option value="in_progress">In progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <button class="button button-primary" type="submit">Add to board</button>
+        </form>
+      </details>
+
+      <footer class="footer">
+        <p id="status-message" role="status" aria-live="polite">Loading saved progress...</p>
+        <p>Progress is stored privately on this machine and scoped to this workspace.</p>
+      </footer>
+    </main>
+  </body>
+</html>

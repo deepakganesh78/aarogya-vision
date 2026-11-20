@@ -89,7 +89,7 @@ function patientBadges(p) {
   );
 }
 
-const VALUE_SOURCE = { live_voice: 'voice, live text (Sarvam)', notes: 'typed note', ai_voice: 'voice note, AI', ai_photo: 'photo, AI', voice_vitals: 'stated in voice note, AI', vitals: 'measured', age_rule: 'age rule' };
+const VALUE_SOURCE = { live_voice: 'voice, live text (Gemini Live)', notes: 'typed note', ai_voice: 'voice note, AI', ai_photo: 'photo, AI', voice_vitals: 'stated in voice note, AI', vitals: 'measured', age_rule: 'age rule' };
 
 function withSource(text, source) {
   return VALUE_SOURCE[source] ? `${text} (${VALUE_SOURCE[source]})` : text;
@@ -129,6 +129,11 @@ async function handleLogin(event) {
 async function loadConfig() {
   const res = await fetch('/api/config');
   const config = await res.json();
+  // Behind Firebase Hosting, live events come straight from Cloud Run.
+  if (config.eventsUrl && config.eventsUrl !== state.eventsUrl) {
+    state.eventsUrl = config.eventsUrl;
+    if (state.events) connectEvents();
+  }
   const ai = config.ai;
   const text = ai.provider === 'gemini' ? `Gemini: ${ai.model}` : ai.provider === 'mock' ? 'AI: MOCK stub (no model)' : 'AI: off';
   $('#ai-badge-text').textContent = text;
@@ -242,7 +247,7 @@ function setLive(on) {
 function connectEvents() {
   state.events?.close();
   if (!state.session || !('EventSource' in window)) return;
-  const es = new EventSource(`/api/doctor/events?token=${encodeURIComponent(state.session.token)}`);
+  const es = new EventSource(`${state.eventsUrl || ''}/api/doctor/events?token=${encodeURIComponent(state.session.token)}`);
   state.events = es;
   es.onopen = () => setLive(true);
   es.onerror = () => setLive(false);
@@ -385,10 +390,12 @@ function liveTranscriptCard(record) {
   return card(
     'Live transcript',
     'graphic_eq',
-    el('p', { className: 'md-typescale-body-small on-surface-variant' }, `Written while the ASHA spoke, by Sarvam AI${live.model ? ` (${live.model})` : ''}. Local testing only, not part of the Google showcase. May contain errors: the voice note is the source of truth.${live.language ? ` Detected language: ${live.language}.` : ''}`),
+    el('p', { className: 'md-typescale-body-small on-surface-variant' }, `AI-generated: written while the ASHA spoke, by Gemini Live${live.model ? ` (${live.model})` : ''}, translated by Gemini. May contain errors: the voice note is the source of truth.${live.language ? ` Language: ${live.language}.` : ''}`),
     el('div', { className: 'transcript' }, live.original),
     same ? null : el('h3', { className: 'md-typescale-title-small' }, 'English'),
-    same ? null : el('div', { className: 'transcript' }, live.english)
+    same ? null : el('div', { className: 'transcript' }, live.english),
+    live.followUp ? el('h3', { className: 'md-typescale-title-small' }, 'Follow-up questions Gemini asked (spoken)') : null,
+    live.followUp ? el('div', { className: 'transcript' }, live.followUp) : null
   );
 }
 
@@ -541,6 +548,25 @@ function guidelinesCard(record, notice) {
   );
 }
 
+// Supplementary passages retrieved from the guideline PDFs (Vertex AI RAG Engine). Not authoritative.
+function passagesCard(record) {
+  const passages = record.guidelinePassages;
+  if (!passages?.length) return null;
+  return card(
+    'Related passages from guideline PDFs',
+    'find_in_page',
+    el('p', { className: 'md-typescale-body-small on-surface-variant' }, 'Retrieved automatically by Vertex AI RAG Engine. Verify against the source document; the references above are the curated citations.'),
+    ...passages.map((p) =>
+      el(
+        'div',
+        { className: 'guideline' },
+        el('p', { className: 'md-typescale-body-medium' }, p.text),
+        el('p', { className: 'source md-typescale-body-small' }, `Source: ${p.source}`)
+      )
+    )
+  );
+}
+
 function decisionCard(record) {
   const body = el('div', { className: 'card-body' }, el('h2', { className: 'card-title md-typescale-title-medium' }, icon('send'), record.decision ? 'Your decision' : 'Record your decision'));
   if (record.decision) {
@@ -668,6 +694,7 @@ async function selectCase(id) {
     await historyCard(record),
     stepsCard(record),
     guidelinesCard(record, guidelineNotice),
+    passagesCard(record),
     ashaCard(record, asha),
     decisionCard(record),
     fhirRow(record),
@@ -697,11 +724,19 @@ function fhirRow(record) {
 
 // ---- Startup ---------------------------------------------------------------------------------
 
+/** Deep link from the block live view: /doctor#case=<id> opens that case. */
+function openCaseFromHash() {
+  const m = /^#case=([^&]+)$/.exec(location.hash);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname);
+  selectCase(decodeURIComponent(m[1]));
+}
+
 function startDashboard() {
   $('#doctor-name').textContent = state.session.user.name;
   $('#sign-out').hidden = false;
   show('view-dash');
-  refreshQueue();
+  refreshQueue().then(openCaseFromHash);
   refreshStats();
   connectEvents();
   clearInterval(state.pollTimer);
@@ -745,8 +780,23 @@ function bind() {
   });
 }
 
+/** Demo auto sign-in (no access code) when the server allows it. */
+async function autoLogin() {
+  try {
+    const config = await (await fetch('/api/config')).json();
+    if (!config.autoLogin) return false;
+    const res = await fetch('/api/login/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'doctor' }) });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body.user?.role !== 'doctor') return false;
+    setSession({ token: body.token, user: body.user });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 hydrateIcons();
 bind();
 loadConfig().catch(() => {});
 if (state.session) startDashboard();
-else show('view-login');
+else autoLogin().then((ok) => (ok ? startDashboard() : show('view-login')));

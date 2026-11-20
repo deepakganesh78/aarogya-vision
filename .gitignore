@@ -1,5 +1,6 @@
 node_modules/
 public/vendor/
+public/models/
 .localdata/
 test-results/
 playwright-report/
@@ -7,3 +8,5 @@ playwright-report/
 .env.*
 !.env.example
 *.log
+.firebase/
+firebase-debug.log

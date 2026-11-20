@@ -3,6 +3,8 @@
 //   theme.css    Material 3 color tokens generated with Google's Material Color Utilities (light + dark)
 //   fonts.css    self-hosted Roboto + Noto Sans Tamil/Devanagari (+ fonts/*.woff2)
 //   icons.js     Material Symbols (rounded) SVG paths for the icons the app uses
+//   three.js     the Three.js classes the lead doctor live view uses (esbuild bundle, self-hosted)
+//   genai/       MediaPipe LLM Inference JS + WASM for the optional on-phone Gemma helper (copied, self-hosted)
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,7 +26,14 @@ const ICONS = [
   'delete', 'error', 'fact_check', 'graphic_eq', 'history', 'image', 'inbox', 'info', 'lock', 'logout', 'medical_information',
   'menu_book', 'mic', 'person', 'photo_camera', 'refresh', 'schedule', 'send', 'stethoscope', 'stop', 'sync', 'translate',
   'verified_user', 'warning', 'person_add', 'search', 'pregnant_woman', 'volume_up', 'repeat', 'location_on', 'local_hospital',
-  'download', 'groups', 'timer', 'today', 'edit', 'badge', 'stop_circle'
+  'download', 'groups', 'timer', 'today', 'edit', 'badge', 'stop_circle', 'find_in_page',
+  // Lead doctor live view
+  'ambulance', 'apartment', 'bed', 'celebration', 'corporate_fare', 'dark_mode', 'device_thermostat', 'electric_moped',
+  'home', 'inventory_2', 'keyboard_arrow_down', 'light_mode', 'local_shipping', 'medication', 'my_location', 'notifications',
+  'park', 'pause', 'play_arrow', 'rainy', 'rotate_left', 'rotate_right', 'route', 'storefront', 'sunny', 'temple_hindu',
+  'train', 'trending_down', 'trending_up', 'vaccines', 'view_in_ar', 'warehouse', 'zoom_in', 'zoom_out', 'water_drop',
+  'directions_bus', 'school', 'agriculture', 'cottage', 'open_in_new', 'mobile', 'keyboard_arrow_up', 'sick', 'emergency', 'add_circle', 'record_voice_over', 'help', 'arrow_forward',
+  'local_pharmacy', 'radar', 'near_me', 'pin_drop', 'package_2', 'open_in_full', 'close_fullscreen'
 ];
 
 async function buildTheme() {
@@ -69,6 +78,16 @@ async function bundle() {
     logLevel: 'warning'
   });
   await esbuild.build({
+    entryPoints: [path.join(root, 'ui', 'three.js')],
+    bundle: true,
+    format: 'esm',
+    minify: true,
+    target: ['es2021'],
+    legalComments: 'linked',
+    outfile: path.join(out, 'three.js'),
+    logLevel: 'warning'
+  });
+  await esbuild.build({
     entryPoints: [path.join(root, 'ui', 'fonts.css')],
     bundle: true,
     minify: true,
@@ -79,8 +98,21 @@ async function bundle() {
   });
 }
 
+// Google AI Edge MediaPipe LLM Inference (Gemma on the phone), served from our own origin.
+// Only the SIMD (non-module) WASM build is copied: every browser with WebGPU also has WASM SIMD.
+async function copyGenai() {
+  const src = path.join(root, 'node_modules', '@mediapipe', 'tasks-genai');
+  const dest = path.join(out, 'genai');
+  await fs.mkdir(dest, { recursive: true });
+  await Promise.all([
+    fs.copyFile(path.join(src, 'genai_bundle.mjs'), path.join(dest, 'genai_bundle.mjs')),
+    fs.copyFile(path.join(src, 'wasm', 'genai_wasm_internal.js'), path.join(dest, 'genai_wasm_internal.js')),
+    fs.copyFile(path.join(src, 'wasm', 'genai_wasm_internal.wasm'), path.join(dest, 'genai_wasm_internal.wasm'))
+  ]);
+}
+
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
-await Promise.all([bundle(), buildTheme(), buildIcons()]);
+await Promise.all([bundle(), buildTheme(), buildIcons(), copyGenai()]);
 const files = await fs.readdir(out, { recursive: true });
 console.log(`built public/vendor (${files.filter((f) => path.extname(f)).length} files)`);

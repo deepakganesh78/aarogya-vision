@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createGeminiProvider } from '../src/ai/gemini.js';
-import { AI_OUTPUT_JSON_SCHEMA, parseAiOutput } from '../src/ai/schema.js';
+import { AI_OUTPUT_JSON_SCHEMA, parseAiOutput, parseSkinPattern } from '../src/ai/schema.js';
+import { SKIN_PATTERN_INSTRUCTION } from '../src/ai/prompt.js';
 import { buildCase } from './helpers.js';
 
 const VALID_OUTPUT = {
@@ -62,6 +63,7 @@ describe('Gemini provider', () => {
     assert.match(prompt, /Age: 8 days/);
     assert.match(prompt, /Tamil/);
     assert.doesNotMatch(prompt, /reference/i);
+    assert.doesNotMatch(prompt, /Test Baby/, 'the patient name never goes to Gemini');
 
     assert.equal(output.findings.length, 1, 'unknown sign ids are dropped');
     assert.equal(output.findings[0].signId, 'not_feeding_well');
@@ -132,5 +134,25 @@ describe('parseAiOutput', () => {
   it('declares nullable reported fields in the response schema', () => {
     assert.deepEqual(AI_OUTPUT_JSON_SCHEMA.properties.reported.properties.age_days.anyOf[1], { type: 'null' });
     assert.ok(AI_OUTPUT_JSON_SCHEMA.required.includes('reported'));
+  });
+});
+
+describe('rash photo check (visual pattern, never a disease)', () => {
+  it('asks Gemini for one pattern from the photo, with a no-diagnosis prompt', async () => {
+    const client = fakeClient({ text: JSON.stringify({ pattern: 'ring_patches', confidence: 'medium', visible_features: ['raised red ring about 3 cm on the forearm'] }) });
+    const provider = createGeminiProvider({ config: { model: 'gemini-test', timeoutMs: 1000 }, client });
+    const out = await provider.classifySkin({ photo: { mimeType: 'image/jpeg', buffer: Buffer.from([0xff, 0xd8, 0xff]) } });
+    assert.deepEqual(out, { pattern: 'ring_patches', confidence: 'medium', features: ['raised red ring about 3 cm on the forearm'], model: 'gemini-test' });
+    const req = client.calls[0];
+    assert.equal(req.config.responseMimeType, 'application/json');
+    assert.ok(req.contents[0].parts.some((p) => p.inlineData?.mimeType === 'image/jpeg'));
+    assert.match(SKIN_PATTERN_INSTRUCTION, /Do not diagnose, name diseases/);
+  });
+
+  it('drops disease names, keeps unclear photos at low confidence, and rejects unknown patterns', () => {
+    const out = parseSkinPattern(JSON.stringify({ pattern: 'small_bumps', confidence: 'high', visible_features: ['looks like scabies', 'many 1-2 mm red bumps between the fingers', 'Fungal infection'] }));
+    assert.deepEqual(out.features, ['many 1-2 mm red bumps between the fingers']);
+    assert.equal(parseSkinPattern(JSON.stringify({ pattern: 'unclear', confidence: 'high', visible_features: [] })).confidence, 'low');
+    assert.throws(() => parseSkinPattern(JSON.stringify({ pattern: 'scabies', confidence: 'high', visible_features: [] })));
   });
 });

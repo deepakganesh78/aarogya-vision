@@ -27,12 +27,13 @@ describe('patients, profiles and history (SQLite)', () => {
     assert.equal(ctx.services.store.name, 'sqlite');
   });
 
-  it('returns the ASHA profile with her village, PHC and doctor', async () => {
+  it('returns the ASHA profile with her village and PHC, and how many doctors are online (no assigned doctor)', async () => {
     const body = await (await fetch(`${ctx.baseUrl}/api/profile`, { headers: authed(asha) })).json();
     assert.equal(body.asha.name, 'Parvati');
     assert.equal(body.asha.village, 'Nammiyampattu');
     assert.equal(body.asha.phc, 'PHC Jamunamarathur');
-    assert.equal(body.doctor.name, 'Dr. R. Senthil');
+    assert.equal(body.doctorsOnline, 0);
+    assert.equal(body.doctor, undefined);
   });
 
   it('registers a new patient on the first visit and recognises her on the next one', async () => {

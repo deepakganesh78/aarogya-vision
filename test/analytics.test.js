@@ -22,7 +22,7 @@ describe('BigQuery analytics export', () => {
     try {
       const worker = await ctx.login('asha-demo');
       const doctor = await ctx.login('doctor-demo');
-      const record = buildCase({ patient: { ageDays: 8, sex: 'female', reference: 'L.K.' } });
+      const record = buildCase({ patient: { name: 'Baby of L.K.', ageValue: 8, ageUnit: 'days', ageDays: 8, sex: 'female', reference: 'L.K.' } });
       await submitCase(ctx.baseUrl, worker, record);
       await ctx.services.processor.drain();
       await fetch(`${ctx.baseUrl}/api/doctor/cases/${record.id}/decision`, {

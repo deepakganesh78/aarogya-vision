@@ -1,5 +1,6 @@
 import '/vendor/material.js';
 import { ageToDays, applicableSigns, patientContext, signLabel, signLevel } from '/shared/dangerSigns.js';
+import { skinPatternLabel } from '/shared/skinPatterns.js';
 import { describeReason, triageAssessment } from '/shared/triage.js';
 import { LANGUAGES, applyTranslations, getLanguage, setLanguage, t } from './i18n.js';
 import * as secure from './secure-store.js';
@@ -7,6 +8,7 @@ import { isRecordingSupported, preparePhoto, startRecording } from './media.js';
 import { startLiveSpeech } from './live-speech.js';
 import { el, formatDate, setChildren } from './dom.js';
 import { hydrateIcons, icon, setIcon } from './icons.js';
+import { gemmaAvailable, mountGemmaHelper } from './gemma-offline.js';
 
 const SESSION_KEY = 'av_session';
 const LANG_KEY = 'av_lang';
@@ -31,7 +33,10 @@ const state = {
   patient: null,
   editing: null,
   appConfig: null,
-  live: null
+  live: null,
+  seenReplies: null, // replies she has opened (persisted per worker)
+  alertedReplies: new Set(), // replies already alerted in this session
+  replyAlertCase: null
 };
 
 function loadSession() {
@@ -121,8 +126,25 @@ async function signOut() {
   state.serverCases = [];
   state.profile = null;
   state.patients = [];
+  state.seenReplies = null;
+  state.alertedReplies.clear();
+  hideReplyAlert();
   await secure.clearCache().catch(() => {});
   show('view-login');
+}
+
+/** Demo auto sign-in (no access code) when the server allows it. Returns true when signed in. */
+async function autoLogin() {
+  if (!state.appConfig?.autoLogin || !navigator.onLine) return false;
+  try {
+    const res = await fetch('/api/login/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'worker' }) });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body.user?.role !== 'worker') return false;
+    saveSession({ token: body.token, user: body.user });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ---- Home ------------------------------------------------------------------------------------
@@ -137,6 +159,93 @@ async function goHome() {
 
 function levelAvatar(level) {
   return el('span', { slot: 'start', className: `level-avatar level-${level || 'PENDING'}` }, icon(level ? LEVEL_ICON[level] : 'schedule', { filled: Boolean(level) }));
+}
+
+// ---- Doctor replies: colour by the doctor's decision, highlight until read, notify on arrival -------
+// Draft clinical wording and colours: refer now is serious (red), home care with follow-up is yellow,
+// a request for more information needs the ASHA to act (blue), no further action is green.
+const REPLY_TONE = { refer_now: 'urgent', home_care_follow_up: 'followup', need_more_info: 'info', no_action: 'ok' };
+const replyTone = (decision) => REPLY_TONE[decision?.outcome] || 'info';
+const replyKey = (c) => (c?.decision ? `${c.id}@${c.decision.at}` : null);
+const seenRepliesKey = () => `av_seen_replies:${state.session?.user.id || ''}`;
+
+function loadSeenReplies() {
+  try {
+    const raw = localStorage.getItem(seenRepliesKey());
+    return raw ? new Set(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+function saveSeenReplies() {
+  localStorage.setItem(seenRepliesKey(), JSON.stringify([...state.seenReplies].slice(-300)));
+}
+function isUnreadReply(c) {
+  return Boolean(c?.decision && state.seenReplies && !state.seenReplies.has(replyKey(c)));
+}
+function markReplySeen(c) {
+  if (!isUnreadReply(c)) return;
+  state.seenReplies.add(replyKey(c));
+  saveSeenReplies();
+  if (state.replyAlertCase === c.id) hideReplyAlert();
+}
+
+/** After each sync: alert once for every reply not seen yet (replies already there on first use are not alerted). */
+function checkReplies() {
+  if (!state.session) return;
+  const replied = state.serverCases.filter((c) => c.decision);
+  if (!state.seenReplies) {
+    state.seenReplies = loadSeenReplies();
+    if (!state.seenReplies) {
+      state.seenReplies = new Set(replied.map(replyKey));
+      saveSeenReplies();
+      return;
+    }
+  }
+  const open = state.view === 'view-case' ? state.openItem?.server?.id : null;
+  for (const c of replied) if (c.id === open) markReplySeen(c);
+  const fresh = replied.filter((c) => isUnreadReply(c) && !state.alertedReplies.has(replyKey(c)));
+  if (!fresh.length) return;
+  for (const c of fresh) state.alertedReplies.add(replyKey(c));
+  fresh.sort((a, b) => b.decision.at.localeCompare(a.decision.at));
+  notifyReply(fresh[0], fresh.length);
+}
+
+function notifyReply(c, count) {
+  const title = t('reply_title');
+  const body = count > 1 ? t('reply_more', { n: count }) : t('reply_body', { name: c.patient?.name || patientMeta(c.patient), outcome: t(`outcome_${c.decision.outcome}`) });
+  state.replyAlertCase = c.id;
+  const view = el('md-filled-button', {}, t('view_reply'));
+  view.addEventListener('click', () => openCaseById(c.id));
+  const close = el('md-icon-button', { ariaLabel: t('dismiss') }, icon('close'));
+  close.addEventListener('click', hideReplyAlert);
+  const box = $('#reply-alert');
+  box.className = `reply-alert reply-alert--${replyTone(c.decision)}`;
+  setChildren(box, el('span', { className: 'reply-alert__icon' }, icon('stethoscope')), el('div', { className: 'reply-alert__text' }, el('strong', { className: 'md-typescale-title-small' }, title), el('span', { className: 'md-typescale-body-medium' }, body)), view, close);
+  box.hidden = false;
+  navigator.vibrate?.([120, 60, 120]);
+  // A system notification too, when she has allowed them (shown even when the app is in the background).
+  if ('Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.showNotification(title, { body, tag: `reply-${c.id}`, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', data: { caseId: c.id }, renotify: true }))
+      .catch(() => {});
+  }
+}
+
+function hideReplyAlert() {
+  state.replyAlertCase = null;
+  $('#reply-alert').hidden = true;
+}
+
+/** Ask once, from a tap (sending a visit), so replies can arrive as phone notifications. */
+function askNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+}
+
+function openCaseById(id) {
+  hideReplyAlert();
+  const c = state.serverCases.find((x) => x.id === id);
+  if (c) openCase({ id: c.id, when: c.capturedAt, pending: false, status: t(`status_${c.status}`), server: c });
 }
 
 // ---- Profile card --------------------------------------------------------------------------
@@ -167,7 +276,14 @@ function renderProfile() {
   $('#profile-name').textContent = `${p.asha.name} · ASHA`;
   $('#profile-place').textContent = t('profile_place', p.asha);
   $('#profile-phc').textContent = p.asha.phc ? t('profile_phc', p.asha) : '';
-  $('#profile-doctor').textContent = p.doctor ? t('profile_doctor', { name: `${p.doctor.name}, ${p.doctor.facility}` }) : '';
+  $('#profile-stats').textContent = p.asha.households && p.asha.since ? t('profile_stats', p.asha) : '';
+  // Cases go to whichever doctor is on the dashboard; show how many are online (only known online).
+  $('#profile-doctor').textContent = '';
+  const watch = $('#doctor-watch');
+  const n = p.doctorsOnline;
+  watch.hidden = typeof n !== 'number' || !navigator.onLine;
+  watch.classList.toggle('away', !n);
+  $('#doctor-watch-text').textContent = n ? t('doctors_online', { n }) : t('doctors_away');
 }
 
 async function renderHome() {
@@ -194,17 +310,20 @@ async function renderHome() {
   $('#empty-state').hidden = items.length > 0;
   for (const item of items) {
     const level = item.server ? item.server.triage.level : item.workerFlag ? 'URGENT' : null;
+    const unread = isUnreadReply(item.server);
+    const tone = item.server?.decision ? replyTone(item.server.decision) : null;
     const row = el(
       'md-list-item',
-      { type: 'button', className: 'case-item', dataset: { caseId: item.id, pending: String(item.pending) } },
+      { type: 'button', className: `case-item${tone ? ` case-item--replied case-item--${tone}` : ''}${unread ? ' case-item--unread' : ''}`, dataset: { caseId: item.id, pending: String(item.pending) } },
       levelAvatar(level),
-      el('div', { slot: 'headline' }, itemName(item) || (level ? t(`level_${level}`) : t('waiting_to_send'))),
+      el('div', { slot: 'headline' }, itemName(item) || (level ? t(`level_${level}`) : t('waiting_to_send')), unread ? el('span', { className: 'reply-badge' }, t('new_reply')) : null),
       el(
         'div',
         { slot: 'supporting-text' },
         itemName(item) ? `${level ? t(`level_${level}`) : t('waiting_to_send')}. ` : '',
         item.server ? `${patientMeta(item.server.patient)}. ` : '',
-        level || item.local?.state === 'failed' ? el('span', { className: item.pending ? 'status pending' : 'status' }, item.status) : null
+        level || item.local?.state === 'failed' ? el('span', { className: item.pending ? 'status pending' : 'status' }, item.status) : null,
+        el('span', { className: 'case-item__date' }, formatDate(item.when, getLanguage()))
       ),
       el('div', { slot: 'trailing-supporting-text' }, formatDate(item.when, getLanguage()))
     );
@@ -246,7 +365,7 @@ function dangerSignList(patient = state.view === 'view-capture' ? formPatient() 
   const p = withDays(patient) || {};
   const ctx = patientContext(p);
   const urgent = applicableSigns(p).filter((s) => signLevel(s, ctx) === 'URGENT');
-  return el('ul', { className: 'danger-list md-typescale-body-large' }, ...urgent.map((s) => el('li', {}, signLabel(s.id, getLanguage()))));
+  return el('ul', { className: 'danger-list md-typescale-body-large' }, ...urgent.map((s) => el('li', { dataset: { sign: s.id } }, signLabel(s.id, getLanguage()))));
 }
 
 // ---- Read aloud ------------------------------------------------------------------------------
@@ -379,7 +498,7 @@ function replyCard(decision) {
   const translated = decision.translated?.text;
   return el(
     'md-filled-card',
-    { className: 'card doctor-reply' },
+    { className: `card doctor-reply doctor-reply--${replyTone(decision)}` },
     el(
       'div',
       { className: 'card-body reply' },
@@ -394,12 +513,38 @@ function replyCard(decision) {
   );
 }
 
+/** Medicines the doctor sent by bike: on the way (from where, about how long) or delivered. */
+function deliveryCard(dispatch) {
+  if (!dispatch) return null;
+  const delivered = dispatch.status === 'delivered';
+  const items = [...new Set(dispatch.stops.flatMap((s) => s.items))];
+  return el(
+    'md-outlined-card',
+    { className: 'card medicine-delivery' },
+    el(
+      'div',
+      { className: 'card-body' },
+      el('h2', { className: 'card-title md-typescale-title-medium' }, icon(delivered ? 'check_circle' : 'electric_moped'), t(delivered ? 'meds_delivered' : 'meds_on_the_way')),
+      el(
+        'p',
+        { className: 'md-typescale-body-large' },
+        delivered
+          ? t('meds_delivered_at', { time: formatDate(dispatch.deliveredAt || dispatch.at, getLanguage()) })
+          : t('meds_coming', { name: dispatch.courier.name, places: dispatch.stops.map((s) => s.name).join(', '), min: dispatch.etaMin })
+      ),
+      el('ul', { className: 'md-typescale-body-medium' }, ...items.map((name) => el('li', {}, name))),
+      el('p', { className: 'md-typescale-body-small on-surface-variant' }, t('meds_check'))
+    )
+  );
+}
+
 /** Content for a visit: either the analysed server case, or a locally saved one still waiting to send. */
 function visitContent({ serverCase, localFlag, localLevel, localPatient, phase }) {
   if (serverCase && phase !== 'analysing') {
     return [
       patientHeader(serverCase.patient),
       replyCard(serverCase.decision),
+      deliveryCard(serverCase.dispatch),
       levelSurface(serverCase.triage.level, { role: 'alert' }),
       statusLine(serverCase.decision ? t('status_responded') : t('sent_to_doctor'), 'done'),
       stepsCard(serverCase),
@@ -431,6 +576,7 @@ function visitContent({ serverCase, localFlag, localLevel, localPatient, phase }
 
 function openCase(item) {
   state.openItem = item;
+  if (item.server) markReplySeen(item.server);
   renderCase();
   show('view-case');
 }
@@ -474,8 +620,8 @@ function startVisit() {
   state.patient = null;
   newCapture();
   fillPatientForm(null);
+  setPatientOpen();
   refreshPatients();
-  setTimeout(() => $('#p-name').focus(), 0);
 }
 
 /** Matching patients under the name field: tap one to fill in her details (a returning patient). */
@@ -579,22 +725,32 @@ function formPatient() {
   };
 }
 
-/** Check the card before sending. Returns the patient, or null after showing what is missing. */
+/**
+ * Check the patient card before sending. Name, age and sex are required; pregnancy months only when
+ * she is pregnant. Returns { patient } or null after showing what is missing.
+ */
 function readPatient() {
   const f = formPatient();
   const err = $('#patient-error');
-  const fail = (key) => {
+  const fail = (key, field) => {
     showError(err, t(key));
     $('#patient-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    field?.focus?.();
     return null;
   };
-  if (!f.name) return fail('need_name');
-  if (f.ageValue === null || !Number.isFinite(f.ageValue) || f.ageValue < 0 || f.ageValue > 120) return fail('need_age');
+  if (!f.name) return fail('need_name', $('#p-name'));
+  if (f.ageValue === null || !Number.isFinite(f.ageValue) || f.ageValue < 0 || f.ageValue > 120) return fail('need_age', $('#p-age'));
   if (!f.sex) return fail('need_sex');
   if (f.pregnant && !f.pregnancyMonths) return fail('need_months');
   showError(err, '');
   const same = state.editing && state.editing.name.toLowerCase() === f.name.toLowerCase() && state.editing.sex === f.sex;
-  return { ...(same && state.editing.id ? { id: state.editing.id } : {}), ...f, visits: same ? state.editing.visits || 0 : 0 };
+  return { patient: { ...(same && state.editing.id ? { id: state.editing.id } : {}), ...f, visits: same ? state.editing.visits || 0 : 0 } };
+}
+
+/** The patient card is required, so it is always open. */
+function setPatientOpen() {
+  $('#patient-card').classList.remove('collapsed');
+  $('#patient-toggle').setAttribute('aria-expanded', 'true');
 }
 
 /** Remember a patient added offline so the worker can pick them again before the next sync. */
@@ -617,6 +773,62 @@ function setPhoto(blob) {
   $('#take-photo-label').textContent = t(blob ? 'retake_photo' : 'take_photo');
   $('#take-photo').classList.toggle('captured', Boolean(blob));
   updateAttachments();
+  checkPhoto(blob);
+}
+
+// ---- Rash photo check: how the skin looks (AI hint for the worker only, never a diagnosis) ----------
+// Not saved with the visit and never changes the urgency level; the doctor names any disease.
+
+async function checkPhoto(blob) {
+  const token = Symbol('photo-check');
+  state.photoCheck = { token, status: blob ? 'checking' : null, result: null };
+  renderPhotoCheck();
+  if (!blob) return;
+  if (!navigator.onLine || !state.session) {
+    state.photoCheck.status = 'offline';
+    return renderPhotoCheck();
+  }
+  let status = 'failed';
+  let result = null;
+  try {
+    const form = new FormData();
+    form.append('photo', blob, 'photo.jpg');
+    const res = await fetch('/api/worker/photo-check', { method: 'POST', headers: authHeader(), body: form });
+    if (res.ok) {
+      result = await res.json();
+      status = 'done';
+    }
+  } catch {
+    status = navigator.onLine ? 'failed' : 'offline';
+  }
+  if (state.photoCheck?.token !== token) return; // a newer photo replaced this one
+  state.photoCheck = { token, status, result };
+  renderPhotoCheck();
+}
+
+function renderPhotoCheck() {
+  const cardNode = $('#photo-check');
+  const pc = state.photoCheck;
+  cardNode.hidden = !pc?.status;
+  if (!pc?.status) return setChildren($('#photo-check-body'));
+  const lang = getLanguage();
+  const title = el('h2', { className: 'card-title md-typescale-title-medium' }, icon('image'), t('photo_check_title'));
+  if (pc.status === 'checking') return setChildren($('#photo-check-body'), title, el('md-linear-progress', { indeterminate: true }), el('p', { className: 'md-typescale-body-medium' }, t('photo_check_checking')));
+  if (pc.status !== 'done') return setChildren($('#photo-check-body'), title, el('p', { className: 'md-typescale-body-medium on-surface-variant' }, t(pc.status === 'offline' ? 'photo_check_offline' : 'photo_check_failed')));
+  const r = pc.result;
+  const checks = r.checks.map((id) => signLabel(id, lang)).filter(Boolean);
+  setChildren(
+    $('#photo-check-body'),
+    title,
+    el('p', { className: 'photo-check__pattern md-typescale-title-large' }, skinPatternLabel(r.pattern, lang)),
+    r.confidence === 'low' && !r.retake ? el('p', { className: 'md-typescale-body-small on-surface-variant' }, t('photo_check_unsure')) : null,
+    r.retake ? el('p', { className: 'md-typescale-body-medium' }, t('photo_check_retake')) : null,
+    lang === 'en' && r.features.length ? el('ul', { className: 'md-typescale-body-medium' }, ...r.features.map((f) => el('li', {}, f))) : null,
+    checks.length ? el('p', { className: 'md-typescale-body-medium' }, t('photo_check_look_for')) : null,
+    checks.length ? el('ul', { className: 'photo-check__signs md-typescale-body-medium' }, ...checks.map((c) => el('li', {}, c))) : null,
+    checks.length ? el('p', { className: 'md-typescale-body-medium' }, t('photo_check_danger')) : null,
+    el('p', { className: 'md-typescale-body-small on-surface-variant' }, `${t('photo_check_hint')}${r.provider === 'mock' ? ' [MOCK]' : ''}`)
+  );
 }
 
 function setAudio(blob, durationSec) {
@@ -652,7 +864,7 @@ function setRecordingUi(recording) {
   if (recording) $('#record-progress').value = 0;
 }
 
-// ---- Live text while speaking (Sarvam, local testing only) ----------------------------------
+// ---- Live text and spoken follow-up questions while speaking (Gemini Live) ------------------
 
 async function loadAppConfig() {
   try {
@@ -677,7 +889,7 @@ function setLiveLine(text) {
 function setLiveStatus(status) {
   state.capture.liveStatus = status;
   if (status === 'done') return;
-  const text = { connecting: t('live_connecting'), live: t('live_listening'), unavailable: t('live_unavailable') }[status] || '';
+  const text = { connecting: t('live_connecting'), live: t('live_listening'), asking: t('live_asking'), unavailable: t('live_unavailable') }[status] || '';
   setLiveLine(text);
 }
 
@@ -695,8 +907,10 @@ function renderLive(text) {
     state.capture.liveWritten = true;
   }
   const differs = text.english && text.english.trim().toLowerCase() !== (text.original || '').trim().toLowerCase();
-  if (!text.interim) setLiveLine(differs ? t('live_english_prefix', { text: text.english }) : '');
-  else if (differs) setLiveLine(t('live_english_prefix', { text: text.english }));
+  const lines = [];
+  if (text.followUp) lines.push(t('live_followup_prefix', { text: text.followUp }));
+  if (differs) lines.push(t('live_english_prefix', { text: text.english }));
+  if (!text.interim || lines.length) setLiveLine(lines.join('\n'));
 }
 
 async function startLive(stream) {
@@ -706,6 +920,8 @@ async function startLive(stream) {
     state.live = await startLiveSpeech({
       stream,
       token: state.session.token,
+      lang: getLanguage(),
+      wsUrl: state.appConfig?.liveSpeech?.wsUrl || null,
       onUpdate: (text) => renderLive(text),
       onStatus: (status) => setLiveStatus(status)
     });
@@ -725,8 +941,9 @@ async function stopLive() {
       original: text.original.slice(0, 4000),
       english: text.english.slice(0, 4000),
       language: text.language,
-      provider: 'sarvam',
-      model: state.appConfig?.liveSpeech?.model || null
+      provider: 'gemini-live',
+      model: state.appConfig?.liveSpeech?.model || null,
+      followUp: text.followUp ? text.followUp.slice(0, 1000) : null
     };
     renderLive({ ...text, interim: false });
   } else {
@@ -734,13 +951,16 @@ async function stopLive() {
   }
 }
 
+// The voice note is ready as soon as the recorder stops; the live follow-up and English text arrive after.
 async function toggleRecording() {
   if (state.recorder) {
     const current = state.recorder;
     state.recorder = null;
-    const [{ blob, durationSec }] = await Promise.all([current.stop(), stopLive()]);
+    const liveDone = stopLive();
+    const { blob, durationSec } = await current.stop();
     setRecordingUi(false);
     setAudio(blob, durationSec);
+    await liveDone;
     return;
   }
   $('#mic-error').hidden = true;
@@ -758,9 +978,10 @@ async function toggleRecording() {
     recorder.finished.then(async ({ blob, durationSec }) => {
       if (state.recorder !== recorder) return;
       state.recorder = null;
-      await stopLive();
+      const liveDone = stopLive();
       setRecordingUi(false);
       setAudio(blob, durationSec);
+      await liveDone;
     });
   } catch {
     state.recorder = null;
@@ -809,11 +1030,12 @@ async function cancelCapture() {
 }
 
 async function handleSend() {
+  askNotificationPermission();
   if (state.recorder) await toggleRecording();
   const c = state.capture;
   const checked = readPatient();
   if (!checked) return;
-  state.patient = checked;
+  state.patient = checked.patient;
   const notes = String($('#notes').value || '').trim().slice(0, 1000);
   if (!c.photo && !c.audio && !notes) return showError($('#capture-error'), t('need_capture'));
   if (!$('#consent').selected) return showError($('#capture-error'), t('consent_required'));
@@ -826,11 +1048,9 @@ async function handleSend() {
   const patient = p
     ? {
         ...(p.id ? { id: p.id } : {}),
-        name: p.name,
-        ageValue: p.ageValue,
-        ageUnit: p.ageUnit,
-        ageDays: ageToDays(p.ageValue, p.ageUnit),
-        sex: p.sex,
+        ...(p.name ? { name: p.name } : {}),
+        ...(p.ageValue !== null && p.ageValue !== undefined ? { ageValue: p.ageValue, ageUnit: p.ageUnit, ageDays: ageToDays(p.ageValue, p.ageUnit) } : {}),
+        ...(p.sex ? { sex: p.sex } : {}),
         ...(p.pregnant ? { pregnant: true, pregnancyMonths: p.pregnancyMonths } : {})
       }
     : undefined;
@@ -854,7 +1074,7 @@ async function handleSend() {
     return showError($('#capture-error'), t('storage_unavailable'));
   }
 
-  if (p) rememberPatient(p);
+  if (p?.name) rememberPatient(p);
   state.result = { id: meta.id, localFlag: workerFlag, localLevel: triage.level, localPatient: patient, phase: navigator.onLine ? 'sending' : 'offline', serverCase: null };
   renderResult();
   show('view-result');
@@ -963,6 +1183,11 @@ function sync({ manual = false } = {}) {
     if (!result.authError && !result.offline && result.sent.length) refreshPatients();
     if (result.authError) {
       saveSession(null);
+      if (await autoLogin()) {
+        $('#sign-out').hidden = false;
+        loadProfile();
+        return result;
+      }
       show('view-login');
       showError($('#login-error'), t('session_expired'));
     }
@@ -976,7 +1201,72 @@ function sync({ manual = false } = {}) {
 
 async function syncAndRender(options) {
   await sync(options);
+  checkReplies();
   if (state.view === 'view-home') await renderHome();
+  // An open visit picks up the doctor's reply and the medicine bike without leaving the screen.
+  if (state.view === 'view-case' && state.openItem?.server) {
+    const fresh = state.serverCases?.find((c) => c.id === state.openItem.server.id);
+    if (fresh && JSON.stringify(fresh) !== JSON.stringify(state.openItem.server)) {
+      state.openItem.server = fresh;
+      renderCase();
+    }
+  }
+}
+
+// ---- Offline Gemma helper (on-phone, assist only) ---------------------------------------------
+// Gemma only points to signs the note mentions. It never answers the checklist, never flips the danger
+// switch and never changes urgency: the rules in /shared/triage.js stay the only source.
+
+let gemmaHelper = null;
+const GEMMA_KEY = 'av_gemma';
+
+// Remember the server's Gemma setting so the helper also shows when the app starts offline.
+function gemmaConfig() {
+  if (state.appConfig) {
+    if (state.appConfig.gemma?.modelUrl) localStorage.setItem(GEMMA_KEY, JSON.stringify({ modelUrl: state.appConfig.gemma.modelUrl }));
+    else localStorage.removeItem(GEMMA_KEY);
+    return state.appConfig;
+  }
+  try {
+    const gemma = JSON.parse(localStorage.getItem(GEMMA_KEY) || 'null');
+    return gemma?.modelUrl ? { gemma } : null;
+  } catch {
+    return null;
+  }
+}
+
+function checklistSigns() {
+  const p = withDays(formPatient()) || {};
+  const ctx = patientContext(p);
+  return applicableSigns(p)
+    .filter((s) => signLevel(s, ctx) === 'URGENT')
+    .map((s) => ({ id: s.id, label: signLabel(s.id, getLanguage()), en: signLabel(s.id, 'en') }));
+}
+
+function gemmaNotes() {
+  const notes = String($('#notes').value || '').trim();
+  const english = state.capture?.liveTranscript?.english?.trim();
+  return english && !notes.includes(english) ? `${notes}\n${english}` : notes;
+}
+
+// Open the danger-sign list and point to the sign. Read-only: nothing is answered for the worker.
+function showSign(id) {
+  const list = $('#danger-signs-list');
+  setChildren(list, dangerSignList());
+  list.hidden = false;
+  const item = [...list.querySelectorAll('li')].find((li) => li.dataset.sign === id);
+  if (!item) return;
+  item.classList.add('gemma-highlight');
+  item.tabIndex = -1;
+  item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  item.focus({ preventScroll: true });
+}
+
+function setupGemma() {
+  const config = gemmaConfig();
+  if (gemmaHelper || !gemmaAvailable(config)) return;
+  gemmaHelper = mountGemmaHelper({ container: $('#gemma-helper'), config, getNotes: gemmaNotes, getSigns: checklistSigns, onPick: showSign });
+  $('#new-visit').addEventListener('click', () => gemmaHelper.reset());
 }
 
 // ---- Language & startup ----------------------------------------------------------------------
@@ -988,12 +1278,14 @@ function rerender() {
     $('#take-photo-label').textContent = t(state.capture?.photo ? 'retake_photo' : 'take_photo');
     $('#record-label').textContent = t(state.recorder ? 'stop' : state.capture?.audio ? 'speak_again' : 'speak');
     setChildren($('#danger-signs-list'), dangerSignList());
+    gemmaHelper?.render();
   }
   if (state.view === 'view-home') renderHome();
   if (state.view === 'view-capture') {
     buildMonthOptions(Number($('#p-months').value) || null);
     renderPatientStatus();
     if (state.capture?.liveStatus) setLiveStatus(state.capture.liveStatus);
+    renderPhotoCheck();
   }
   if (state.view === 'view-result') renderResult();
   if (state.view === 'view-case') renderCase();
@@ -1019,6 +1311,7 @@ function bindEvents() {
   $('#login-form').addEventListener('submit', handleLogin);
   $('#sign-out').addEventListener('click', signOut);
   $('#new-visit').addEventListener('click', startVisit);
+  $('#patient-toggle').addEventListener('click', () => $('#p-name').focus());
   $('#p-name').addEventListener('input', () => {
     renderPatientStatus();
     renderSuggestions();
@@ -1077,9 +1370,16 @@ async function start() {
   applyTranslations();
   renderNetwork();
   bindEvents();
-  loadAppConfig();
-  $('#sign-out').hidden = !state.session;
+  const configReady = loadAppConfig();
+  configReady.then(setupGemma);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  if (!state.session) {
+    await configReady;
+    await autoLogin();
+  }
+  $('#sign-out').hidden = !state.session;
+  // Opened from the doctor dashboard's phone button: a way back.
+  $('#back-to-dashboard').hidden = new URLSearchParams(location.search).get('from') !== 'live';
   if (state.session) {
     loadProfile();
     refreshPatients();
@@ -1091,6 +1391,23 @@ async function start() {
   setInterval(() => {
     if (state.session && navigator.onLine) syncAndRender();
   }, 20_000);
+  // Back in the foreground: check for replies at once.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && state.session && navigator.onLine) syncAndRender();
+  });
+  // Tapping a "doctor replied" notification opens that visit.
+  navigator.serviceWorker?.addEventListener('message', (e) => {
+    if (e.data?.type === 'open-case' && e.data.caseId) openCaseById(e.data.caseId);
+  });
+  const hash = /^#case=([^&]+)$/.exec(location.hash);
+  if (hash && state.session) {
+    history.replaceState(null, '', location.pathname + location.search);
+    syncAndRender().then(() => openCaseById(decodeURIComponent(hash[1])));
+  }
+  // Keep "your doctor is watching now" fresh.
+  setInterval(() => {
+    if (state.session && navigator.onLine) loadProfile();
+  }, 30_000);
 }
 
 start();

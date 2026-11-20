@@ -142,19 +142,47 @@ Repository: this repo. Main docs: [README.md](README.md) and [docs/architecture.
 
 ### User flow (simplified "photo or voice" UX)
 
-1. **ASHA phone (Material 3 web app, works offline):** two big buttons, **Take photo** and **Speak** (English, Hindi or Tamil). There is one consent switch and an optional **I see a danger sign** switch. *Type instead* is available. There is no form.
+1. **ASHA phone (Material 3 web app, works offline):** two big buttons, **Take photo** and **Speak** (English, Hindi or Tamil). Patient details (name, age, sex, pregnancy) are optional and folded away; Gemini reads age and sex from the voice note. There is one consent switch and an optional **I see a danger sign** switch. The profile card shows her village, PHC and how many doctors are online: cases go to a shared queue, not a named doctor.
 2. **Send:** the visit is encrypted on the phone (AES-GCM, non-extractable key, IndexedDB) and sent. Offline, it is queued and sends itself later.
 3. **Gemini reads and fills:** age, sex, temperature, breath count, and danger signs present or absent. It also returns a transcript, an English translation and follow-up questions. No diagnosis.
 4. **Rules decide urgency:** WHO / MoHFW young-infant danger signs. AI findings can only raise the level.
 5. **Phone shows the result:** the urgency level, then **What we understood**, with each value tagged *from voice* or *from photo*. Offline, the phone shows a "refer now if you see any of these" list instead; the danger switch gives *Urgent: refer now* instantly.
-6. **Doctor console (Material 3 list-detail):** urgent cases first, the photo and voice note, a labelled AI summary, every AI-filled value tagged with its source, and cited guidelines. The doctor records the decision.
+6. **Doctor dashboard (the 3D block view, `/live`; `/doctor` redirects there):** the place gets a red location pin and appears under **Needs attention**. The doctor clicks it, the map zooms in, the side panel lists the place's cases, and one case opens the AI-organised view (symptoms with evidence and source, photo and what is visible, voice note in English, patient details, guidance). The doctor prescribes medicines (doctor-chosen and doctor-dosed), escalates to a larger hospital, or asks the ASHA for more, on the same screen.
 7. **Reply:** machine-translated into the worker's language by Gemini, with the doctor's original text shown.
+
+### Doctor dashboard: the 3D block view (`/live`)
+
+The doctor dashboard. There is no separate console in the main flow: `/doctor` redirects here, and the earlier list console stays at `/doctor/classic`. The block's operations (traffic, couriers, ambulances, centre queues) are simulated in the browser; **real cases from the ASHA app** appear once a doctor signs in (top-bar chip, or a console session in the same tab).
+
+- **World:** Jawadhu Hills block (Tiruvannamalai district), built in code with no external models. Seven hill villages sit around the block town Jamunamarathur among paddy, sugarcane, banana and groves, with a tank, a village temple, a bus stand and a school. Village names match `src/people.json`: Parvati's Nammiyampattu and Meena's Kovilur. The layout itself is invented.
+- **White and red theme:** buildings are white. Health facilities (PHC Pudurnadu, PHC Melpattu, the upgraded 24x7 PHC Jamunamarathur that is the 108 base, 4 HWC sub-centres and the block drug store) are white with red trim and red signs. Homes turn **red** while a case is *urgent: refer now* (with a pulsing ring) and **yellow** while it needs a *doctor review today*. At night they glow so the colours stay readable. A legend on the map explains the colours.
+- **Real cases (doctor queue):** `public/js/live-queue.js` signs in (or reuses the console's `sessionStorage` session), reads `GET /api/doctor/cases?view=open`, `/api/doctor/stats`, `/api/doctor/ashas` and `/api/profile`, and listens to the server-sent events (an open connection also counts the doctor as online for the ASHA's phone). Each open case is placed on a home in the ASHA's village (by village name, else by ASHA id). The simulation never sends an ambulance for a real case and never changes or closes it: the home clears only when the case leaves the open queue (the doctor replied).
+- **Needs attention:** each place with open real cases gets a red location pin (pulsing while a case there is unopened) and a red map label; a toast announces new ones and the camera flies there if the doctor is not looking at something else. The collapsible **Needs attention** panel (left; a bottom-sheet tab on phones) lists the places, most urgent first. Pin, label, list or the village itself open the **place panel**: one card per case with patient, age, ASHA, time, the AI gist and photo or voice icons.
+- **Case panel** (full height, 400px): back to the place; name, sex, age, pregnancy and case id; level and *ASHA app* tags; the AI banner (provisional while Gemini is reading, then the AI case summary with uncertainty, always labelled as AI that describes and does not diagnose); **symptoms and danger signs** from the rules with source, evidence quote and *verify*, plus signs said to be absent; the **photo** (click to enlarge) with Gemini's neutral photo observations; the **voice note in English** with the original language on request and audio that loads only on *Play*; **patient and medical details** (vitals, history, ASHA flag, sending ASHA with travel distances, received time); what is still unknown; questions to ask; cited guidance.
+- **Doctor's decision** (draft clinical wording): **Medicines**: quick picks of common essential medicines (names only) and free entry; the doctor must give every dose, plus how often, days and a follow-up visit. **Escalate**: PHC Jamunamarathur (24x7), GH Polur or GMCH Tiruvannamalai, now with 108 or within 24 hours (urgent cases open on this tab). **Ask the ASHA**: prefilled with the AI's follow-up questions. A private *assessment* field holds the doctor's provisional diagnosis; it is stored with the decision but never sent to the ASHA. The dashboard writes medicines and destination into the instructions, so the ASHA gets them machine-translated with the original; `medicines` and `referTo` are also stored structured. The home and pin clear when the reply is sent.
+- **Look for medicines (after a prescription):** the decided case shows **Look for medicines**. It opens a finder panel and a scan sweeps out from the patient's home. Each place that has at least one prescribed medicine lights up as the scan reaches it: green if it has all of them, amber if some. Map labels and panel rows show stock per medicine (units, *low* under 5, *out*) and road distance from the patient. Sources are the 3 PHC pharmacies, the 4 HWC sub-centres (a small share of their stock) and 3 private medical shops in the town market (Murugan Medicals, Lakshmi Pharmacy, Sakthi Medicals).
+  - *Suggested pickup* is a greedy cover: the fewest places that together have every medicine, nearest first. Each medicine is then collected from the nearest chosen place that has it, and places that add nothing are shown as *not needed*.
+  - The nearest free bike (`MC-01` to `MC-09`) collects. Stops at its own PHC are picked up before leaving; the others follow nearest-next. The route is drawn on the map.
+  - **Send bike** saves the dispatch on the server first (`POST /api/doctor/cases/:id/dispatch`, once per case, only after a decision with medicines), then starts the run (`RX-501` onward, type *Prescription delivery*: Prescribed, Bike assigned, Collecting, Collected, On the way, Delivered).
+  - Each stop pings when collected and its stock goes down. On arrival the dashboard reports `POST .../dispatch/delivered` (idempotent) and shows a toast. Other open dashboards and a reload resume on-the-way dispatches from the server (`case.dispatch` events, `dispatchStatus` in the case list).
+  - Medicine names typed by the doctor map to the stock list by alias (for example *Dolo* and *Crocin* map to paracetamol); unknown names are reported as missing. **Stock, distances and bikes are simulated.** The pharmacist checks each medicine and dose before it leaves.
+- **ASHA app:** an open visit shows *Medicines on the way* (bike rider, places, ETA, medicine names) and then *Delivered* with the time, in en/hi/ta (draft translations). The worker view includes names only, not internal source or bike ids.
+- **Rural worker app on the same screen:** the phone button (top right) opens the ASHA app in a phone frame (same-origin iframe), so the demo shows a case sent from the phone landing on the map.
+- **Collapsible panels:** KPIs (to compact figures), legend, Needs attention, side panel, run tracker, tables and active runs each fold to their header; remembered in `localStorage`.
+- **Life (simulated):** simulated cases open and close. Urgent ones dispatch a 108 ambulance from PHC Jamunamarathur; the home stays red until pickup, and the run ends at "Reached block PHC". Medicine couriers ride from the PHCs to homes and HWCs, and supply vans restock centres from the drug store. Cars, autos, buses, tractors and bullock carts obey signals in the town, take turns at village junctions, and never overlap.
+- **Panels:** KPIs (open cases, patients this hour, average medicine delivery, doctors on duty), a run tracker, a detail panel (block, village, home with its case, HWC staff and stock, centre doctors, beds and stock, vehicle, run) and tables (Facilities, Cases, Runs, Fleet). Search, a village switcher, Summer, Monsoon or Festival night, day or night, and a phone layout are included.
 
 ### Google stack
 
 | Need | Google service | Code |
 |---|---|---|
-| Multimodal reading and field filling | Gemini (`gemini-3.8-flash` default) via Vertex AI in production, API key in dev; `responseJsonSchema` structured output | `src/ai/` |
+| Multimodal reading and field filling | Gemini via Vertex AI in production (`gemini-3.5-flash`, served from asia-south1; `gemini-3.8-flash` is `global`-only), API key in dev; `responseJsonSchema` structured output | `src/ai/` |
+| Live text + spoken follow-up questions | Gemini Live API (`gemini-3.8-live`, Vertex AI asia-south1), WebSocket relay on Cloud Run | `src/speech/geminiLive.js` |
+| Offline danger-sign helper | Gemma 3 1B via Google AI Edge MediaPipe LLM Inference (WebGPU), suggestions only | `public/js/gemma-offline.js` |
+| Guideline passages (RAG) | Vertex AI RAG Engine over MoHFW PDFs in Cloud Storage; supplementary to the curated citations | `src/rag.js`, `scripts/rag-corpus.mjs` |
+| FHIR R4 records | Cloud Healthcare API FHIR store (PUT upserts, purged with the case) | `src/healthcare.js` |
+| Urgent alerts and cross-instance live updates | Cloud Pub/Sub | `src/events.js` |
+| Doctor dashboard hosting | Firebase Hosting → Cloud Run | `firebase.json` |
 | Translation of the doctor's reply | Gemini | `src/ai/gemini.js` |
 | Prompt testing and model choice | Google AI Studio | `docs/ai-studio/` |
 | Hosting | Cloud Run (asia-south1) via Cloud Build and Artifact Registry | `Dockerfile`, `scripts/deploy-cloudrun.sh` |
@@ -175,6 +203,7 @@ Repository: this repo. Main docs: [README.md](README.md) and [docs/architecture.
 - `src/ai/prompt.js` and `src/ai/schema.js`: the non-diagnostic prompt (`intake-v2`) and the output schema.
 - `src/guidelines/young-infant.json`: the curated, cited corpus (draft).
 - `eval/`: the 21-case safety evaluation. `test/`: unit and API tests. `e2e/`: the Playwright loop.
+- `public/live.html`, `public/js/live-app.js` and `public/js/live/`: the lead doctor live view. These cover the layout, the road network, traffic, the operations simulation (pure logic, unit-tested in `test/live.test.js`), and the Three.js world, vehicles, camera and controls.
 
 ## 7. Design decisions and why
 
@@ -201,6 +230,11 @@ Repository: this repo. Main docs: [README.md](README.md) and [docs/architecture.
   - Production refuses demo access codes and the mock AI.
 - **Material 3 done officially:** `@material/web` components, generated tokens, generated icon paths from Material Symbols, and fonts self-hosted, not hand-made CSS imitations.
 - **Mock AI provider:** deterministic and clearly labelled MOCK, for tests and key-less demos. It is refused in production.
+- **Live view built to the project rules, not the brief's single file:** the brief asked for a single-file page with Three.js from a CDN. We kept the strict CSP and the no-CDN rule. Three.js is bundled by esbuild into `public/vendor/three.js` and served from our own origin, and the code is split into tested modules. The panels are Material 3 (frosted glass from tokens). The brief's tomato-red accent became the M3 primary blue, because red means urgent here.
+- **One doctor dashboard:** the doctor works on the 3D block view: see where help is needed (red pins), open the place, open the case, answer. The list console survives at `/doctor/classic` for FHIR download and filters, but it is not part of the demo flow.
+- **Medicines come from the doctor, never from AI:** the AI prompt and the `noMedicine` filter still keep medicines and doses out of everything AI writes and out of the guideline steps shown to ASHAs. The doctor may prescribe: the quick list holds names only, every dose is typed by the doctor, and the decision records who prescribed. The doctor's provisional diagnosis stays in a private assessment field. Draft wording; needs clinician sign-off.
+- **No named doctor:** a case goes to the shared queue; the ASHA sees how many doctors have the dashboard open (`doctorsOnline`) instead of one assigned doctor.
+- **Rural, case-first live view:** the lead doctor needs to see where to act. Homes are coloured only by the level from the danger-sign rules (urgent red, review-today yellow). The doctor still makes every clinical decision, and the case wording is a draft. Shops and the school stay white.
 
 ## 8. Clinical content
 
@@ -248,20 +282,28 @@ Worker guidance for an urgent case: refer to the nearest facility now, following
 | CSP blocked Material styles | Lit applies some styles via style attributes | Allow only `style-src-attr 'unsafe-inline'` |
 | Stray "null" text in cards | DOM `append(null)` renders "null" | `setChildren` / `appendChildren` filter out nulls |
 | Washed-out theme | Tonal-spot scheme desaturated Google Blue | Vibrant scheme (primary `#0056D2`) |
+| Live view: a car clipped a slow bullock cart turning a village corner | A vehicle could follow a leader from the same approach into the junction while the leader was still turning | Follow into the box only behind a vehicle going straight; a turning leader must clear first |
+| Doctor dashboard: the demo phone stayed blank | The CSP had `frame-ancestors 'none'` | `frame-ancestors 'self'` (and `frame-src 'self'`): only our own pages may frame the app |
+| Doctor dashboard: CSP console errors for `blob:` media | Chrome re-reads object URLs it made through `connect-src` | Load audio only on *Play*, and allow `blob:` in `connect-src` (object URLs are created by our own page) |
+| Live view: urgent homes piled up waiting for an ambulance | Returning vehicles held the block PHC's gate kerb for their whole drive back | Wait at a staging kerb one junction before the gate; cap open simulated urgent cases at 3 |
 
 ## 10. Verification status
 
 **Verified locally (mock AI):**
 
-- **Unit and API tests:** 55, covering:
+- **Unit and API tests:** 103 (after merging the patient register, SQLite and all-ages work), covering:
   - rules, auto-fill, auth and roles, idempotent sync, validation, the audit trail (no health content);
   - Gemini request shape, safety blocks and timeouts;
   - the Firestore and Cloud Storage store against API fakes;
-  - analytics de-identification.
-- **Playwright end-to-end tests:** 2, covering:
+  - analytics de-identification;
+  - the live view: no vehicle overlaps or gridlock, the urgent-case cap, referrals that reach the block PHC, real cases mirrored into the ASHA's village and never closed or escalated by the simulation, the medicine finder (name matching, a suggested round that covers the prescription, a two-stop bike run that collects every stop in order and lowers stock), and the `/live` page under the strict CSP;
+  - the dispatch API: doctor-only, only after a prescription, once per case, shown to the ASHA, delivery idempotent.
+- **Playwright end-to-end tests:** 7, covering:
   - an offline photo-only visit with the danger switch, encryption at rest, then auto-sync;
   - an online voice-only visit auto-filled by AI, with "What we understood" in Tamil;
   - the doctor decision, then the translated reply on the phone;
+  - the 3D live view on desktop (cases table, home detail, village search, night), with the real doctor queue (a case sent by Parvati appears in Nammiyampattu without a refresh), and on a phone in the dark scheme;
+  - prescribe, **Look for medicines** (scan, places with stock on the map and in the panel, suggested round), **Send bike** (the RX run is tracked and the ASHA's case shows the medicines on the way);
   - dark mode, and zero CSP or console errors.
 - **Safety evaluation:** 21 synthetic cases, zero under-triage.
 
@@ -270,12 +312,26 @@ Worker guidance for an urgent case: refer to the nearest facility now, following
 - **Live Gemini:** checked only against SDK request and response shapes. Run `npm run eval -- --ai` with a key.
 - **Real Google Cloud:** the deploy script is syntax-checked only; Firestore and GCS were tested against fakes.
 
+- **Demo auto sign-in:** `POST /api/login/auto {role}` issues a session for the first ASHA or doctor account with no code. `AUTO_LOGIN` defaults to on outside production and off in production unless `AUTO_LOGIN=true`. The ASHA app, the 3D dashboard and the classic console use it on load and when a session expires; `/api/config` reports `autoLogin`. Playwright runs with `AUTO_LOGIN=false` to keep testing the code screens.
+- **Local Vertex AI (live Tamil to English):** a gitignored `.env` with `AI_PROVIDER=gemini`, `GOOGLE_GENAI_USE_ENTERPRISE=true`, `GOOGLE_CLOUD_PROJECT=arogya-515308`, `GEMINI_MODEL=gemini-3.5-flash`, `SPEECH_PROVIDER=gemini-live`, `LIVE_MODEL=gemini-3.8-live` (asia-south1) runs on the `gcloud` Application Default Credentials, with no API key. Verified on 20 Nov 2026: Tamil speech gave a live Tamil transcript, a Tamil follow-up question and the English 'The baby is eight days old. Has not drunk milk since morning. The body is hot. There are red rashes on the hand.', and the doctor's case showed the same English with the urgent level.
+
+- **Rash photo check (ASHA phone only, draft):** right after the worker takes a photo, `POST /api/worker/photo-check` (worker only) asks Gemini vision which *visual pattern* it shows, never a disease. The patterns are ring-shaped patches, small bumps or lines, blisters or pus spots, red swollen area, dry scaly patches, many red spots, yellow skin, wound or burn, other, unclear and not skin (`public/shared/skinPatterns.js`, en/hi/ta). The card lists the matching danger signs to check and points to the "I see a danger sign" switch. The photo and the result are not stored, the result never reaches the case, the dashboard or the urgency level, and the parser drops any disease word. Offline, it says the doctor will still see the photo. Verified live on 20 Nov 2026 with CDC/Wikimedia test photos: ringworm gave ring-shaped patches, impetigo gave blisters or pus spots, and measles gave many red spots, all with high confidence. A drawing was classed as "not skin". Prompt `intake-v4-skin-pattern`.
+- **Dashboard first start:** light theme on first open (night only from the URL or a saved choice, `av_live_theme`). Every panel is folded except the right panel (`av_live_collapsed_v2`). The right panel's main view is **Active cases**: ASHA-app cases grouped by place (cards with the AI gist, click to open), then simulated home-visit cases, with the block overview in a fold. The full-screen button (or Esc to return) spreads Active cases, and any case opened from it, over the map. Choosing a table tab opens the tables.
+- **Live events behind Firebase Hosting:** Hosting buffers server-sent events, so `/api/config` returns `eventsUrl` (the Cloud Run URL taken from `LIVE_WS_URL`). Both doctor UIs open the event stream there; CORS allows only `https://<project>.web.app` and `.firebaseapp.com`.
+- **Login limiter:** counts failed sign-ins only (10 per 5 minutes per IP). Successful and automatic sign-ins never lock anyone out.
+- **Deployed (20 Nov 2026):** Cloud Run `aarogya-vision` revision `00005` in asia-south1 with `AUTO_LOGIN=true`, behind Firebase Hosting at https://arogya-515308.web.app. Checked live:
+  - auto sign-in for both roles;
+  - Tamil speech through Gemini Live: a word-for-word Tamil transcript, a Tamil follow-up question, and English ("My son is six years old. For two weeks, there are circular red patches on the hand. It itches a lot. There is no fever.");
+  - a voice and photo visit analysed by `gemini-3.5-flash`, with an English transcript, a doctor summary, 3 guidelines and the Review today level;
+  - the rash photo check;
+  - the dashboard with "Live queue", Active cases and full screen.
+
 ## 11. Runbook
 
 ```bash
 npm install
 cp .env.example .env              # AI_PROVIDER=mock works with no keys
-npm run dev                       # http://localhost:8080 (ASHA: asha-demo) and /doctor (doctor-demo)
+npm run dev                       # http://localhost:8080 = 3D dashboard (doctor-demo); /asha = ASHA app (asha-demo); /doctor/classic
 npm test && npm run test:e2e && npm run eval
 npm run eval -- --ai              # with GEMINI_API_KEY: live Gemini safety check
 npm run prompt:export             # AI Studio prompt pack in docs/ai-studio/
@@ -284,13 +340,15 @@ PROJECT_ID=your-project ./scripts/deploy-cloudrun.sh   # from Cloud Shell
 
 **Three-minute demo:**
 
-1. Sign in on a phone and switch to Tamil.
+1. Open `/asha` on a phone (auto signed in as Parvati in demo mode) and switch to Tamil.
 2. **New visit**, then **Speak**: "Baby girl, 8 days old, not feeding since morning, feels hot, temperature 38.3, no fits." Turn on consent and send.
 3. Show *Urgent* and **What we understood**, with each value tagged *from voice*.
 4. Turn the network off. Send a photo-only visit with the danger switch on: urgent advice appears instantly.
 5. Turn the network on: it auto-syncs.
-6. In the doctor console, show the tagged AI values and the WHO citation, then send *Refer now*.
-7. On the phone, the Tamil reply appears with the original below.
+6. Open the dashboard (`/doctor`); demo mode signs in as Dr. Senthil. Nammiyampattu has a red pin and is listed under **Needs attention** (or send the visit from the phone button at the top right and watch the pin drop).
+7. Click it, open the case: symptoms with evidence, photo, voice note in English, patient details, guidance. Choose **Escalate** (or **Medicines** with doses) and send; the pin clears.
+8. After a prescription: **Look for medicines**, watch the scan, tick a place, **Send bike**, and follow the bike.
+9. On the phone, the Tamil reply appears with the original below, plus *Medicines on the way*.
 
 ## 12. Open items and roadmap
 
@@ -304,10 +362,9 @@ PROJECT_ID=your-project ./scripts/deploy-cloudrun.sh   # from Cloud Shell
 **After the buildathon:**
 
 - Clinician sign-off on the rules and corpus; native-speaker review of Hindi and Tamil.
-- Gemma on-device for offline transcription and field filling.
-- Gemini Live for spoken follow-up questions.
-- Pub/Sub push alerts for urgent cases.
-- FHIR R4 through the Cloud Healthcare API for ABDM.
+- Gemma on-device voice transcription and field filling (today it only suggests signs from typed notes).
+- Push notifications to doctors from the Pub/Sub urgent-alert subscription.
+- ABDM integration of the Cloud Healthcare FHIR store.
 - More languages and conditions; a district pilot; a regulatory pathway.
 
 ## 13. References

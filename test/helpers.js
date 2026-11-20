@@ -43,7 +43,7 @@ export function buildCase(overrides = {}) {
     capturedAt: now,
     language: 'ta',
     consent: { given: true, givenBy: 'mother', method: 'verbal', at: now },
-    patient: { ageDays: 8, sex: 'female' },
+    patient: { name: 'Test Baby (synthetic)', ageValue: 8, ageUnit: 'days', ageDays: 8, sex: 'female' },
     assessment: { signs, temperatureC: null, breathsPerMin: null, notes: 'Baby feels hot and is not feeding. Red skin around the navel.' },
     audioDurationSec: 12,
     ...overrides

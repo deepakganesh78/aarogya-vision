@@ -28,6 +28,21 @@ function parseAccessCodes(raw, isProd) {
   return parsed;
 }
 
+// A same-origin path ("/models/gemma.task") or an absolute https URL (http only outside production).
+function parseGemmaModelUrl(raw, isProd) {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+  if (value.startsWith('/') && !value.startsWith('//')) return value;
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('GEMMA_MODEL_URL must be an https URL or a same-origin path starting with /');
+  }
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && !isProd)) throw new Error('GEMMA_MODEL_URL must use https');
+  return url.href;
+}
+
 export function loadConfig(env = process.env) {
   const isProd = env.NODE_ENV === 'production';
 
@@ -43,11 +58,19 @@ export function loadConfig(env = process.env) {
   if (provider === 'mock' && isProd) throw new Error('AI_PROVIDER=mock is not allowed in production');
 
   // sqlite = one local database file (default for development); local = JSON files; gcp = Firestore + Cloud Storage.
-  // Live speech-to-text while the worker speaks. Sarvam AI is for LOCAL TESTING ONLY: the showcase is Google-only.
+  // Live speech while the worker speaks: Gemini Live API (live text + spoken follow-up questions).
   const speechProvider = env.SPEECH_PROVIDER || 'none';
-  if (!['none', 'sarvam'].includes(speechProvider)) throw new Error('SPEECH_PROVIDER must be none or sarvam');
-  if (speechProvider === 'sarvam' && isProd) throw new Error('SPEECH_PROVIDER=sarvam is for local testing only and is not allowed in production');
-  if (speechProvider === 'sarvam' && !env.SARVAM_API_KEY) throw new Error('SPEECH_PROVIDER=sarvam needs SARVAM_API_KEY');
+  if (!['none', 'gemini-live'].includes(speechProvider)) throw new Error('SPEECH_PROVIDER must be none or gemini-live');
+  if (speechProvider === 'gemini-live' && !enterprise && !env.GEMINI_API_KEY) {
+    throw new Error('SPEECH_PROVIDER=gemini-live needs GOOGLE_GENAI_USE_ENTERPRISE=true or GEMINI_API_KEY');
+  }
+
+  const gemmaModelUrl = parseGemmaModelUrl(env.GEMMA_MODEL_URL, isProd);
+
+  // Demo: sign the ASHA and the doctor in without an access code. On by default outside production;
+  // in production only when AUTO_LOGIN=true is set explicitly (synthetic-data demo deployments).
+  if (env.AUTO_LOGIN && !['true', 'false'].includes(env.AUTO_LOGIN)) throw new Error('AUTO_LOGIN must be true or false');
+  const autoLogin = env.AUTO_LOGIN ? env.AUTO_LOGIN === 'true' : !isProd;
 
   const store = env.STORE || (isProd ? 'gcp' : 'sqlite');
   if (!['sqlite', 'local', 'gcp'].includes(store)) throw new Error('STORE must be sqlite, local or gcp');
@@ -71,6 +94,7 @@ export function loadConfig(env = process.env) {
     },
     accessCodes: parseAccessCodes(env.ACCESS_CODES, isProd),
     usingDemoCodes: !env.ACCESS_CODES,
+    autoLogin,
     sessionSecret,
     tokenTtlSec: Number(env.TOKEN_TTL_SEC) || 12 * 60 * 60,
     retentionDays: Number(env.RETENTION_DAYS) || 30,
@@ -78,10 +102,29 @@ export function loadConfig(env = process.env) {
     maxAudioBytes: 10 * 1024 * 1024,
     speech: {
       provider: speechProvider,
-      apiKey: env.SARVAM_API_KEY,
-      model: env.SARVAM_STT_MODEL || 'saaras:v4',
-      url: env.SARVAM_WS_URL || 'wss://api.sarvam.ai/speech-to-text-realtime/ws'
+      model: env.LIVE_MODEL || 'gemini-3.8-live',
+      apiKey: env.GEMINI_API_KEY,
+      enterprise,
+      project: env.GOOGLE_CLOUD_PROJECT,
+      location: env.LIVE_LOCATION || env.GOOGLE_CLOUD_LOCATION || 'asia-south1',
+      // Behind Firebase Hosting (no WebSockets), the phone opens the live socket on the Cloud Run URL directly.
+      wsUrl: env.LIVE_WS_URL && /^wss:\/\/[^/]+\/?$/.test(env.LIVE_WS_URL) ? env.LIVE_WS_URL.replace(/\/$/, '') : null
     },
+    // Cloud Pub/Sub topic for case events (urgent alerts + fan-out across Cloud Run instances).
+    pubsub: env.PUBSUB_TOPIC ? { topic: env.PUBSUB_TOPIC, projectId: env.GOOGLE_CLOUD_PROJECT } : null,
+    // Cloud Healthcare API FHIR R4 store. Without it, bundles are saved under DATA_DIR/fhir.
+    healthcare: env.FHIR_STORE
+      ? {
+          project: env.GOOGLE_CLOUD_PROJECT,
+          location: env.HEALTHCARE_LOCATION || 'asia-south1',
+          dataset: env.HEALTHCARE_DATASET || 'aarogya',
+          fhirStore: env.FHIR_STORE
+        }
+      : null,
+    // Vertex AI RAG Engine corpus of guideline PDFs (supplementary passages for the doctor).
+    rag: env.RAG_CORPUS ? { corpus: env.RAG_CORPUS, topK: Number(env.RAG_TOP_K) || 3 } : null,
+    // Optional on-phone Gemma helper (MediaPipe LLM Inference). Hidden when unset.
+    gemma: gemmaModelUrl ? { modelUrl: gemmaModelUrl } : null,
     ai: {
       provider,
       apiKey: env.GEMINI_API_KEY,

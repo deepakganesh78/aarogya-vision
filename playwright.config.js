@@ -23,6 +23,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}/api/health`,
     reuseExistingServer: false,
     timeout: 30_000,
-    env: { PORT: String(PORT), AI_PROVIDER: 'mock', DATA_DIR: dataDir, SESSION_SECRET: 'e2e-secret' }
+    // Auto sign-in off: these tests exercise the access-code screens.
+    env: { PORT: String(PORT), AI_PROVIDER: 'mock', DATA_DIR: dataDir, SESSION_SECRET: 'e2e-secret', AUTO_LOGIN: 'false' }
   }
 });

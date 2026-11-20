@@ -178,6 +178,12 @@ md-outlined-text-field, md-outlined-select { width: 100%; }
 md-list { background: transparent; --md-list-container-color: transparent; padding: 0; }
 .case-list md-list-item { border-radius: 12px; --md-list-item-two-line-container-height: 72px; }
 .case-list md-list-item + md-list-item { margin-top: 4px; }
+.case-item__date { display: none; }
+/* Narrow phones: the date moves under the text so the name and status keep their width. */
+@media (max-width: 400px) {
+  .case-item [slot='trailing-supporting-text'] { display: none; }
+  .case-item__date { display: block; margin-top: 2px; }
+}
 
 /* ---- Empty state ---- */
 .empty-state { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 48px 24px; color: var(--md-sys-color-on-surface-variant); }
@@ -250,6 +256,26 @@ a { color: var(--md-sys-color-primary); }
 .profile { grid-template-columns: 48px 1fr; align-items: center; gap: 16px; }
 .profile__avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
 .profile-card { margin-bottom: 8px; }
+/* Optional patient card on the capture screen: folded under its header until the worker opens it. */
+.patient-toggle {
+  width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; gap: 8px;
+}
+.patient-toggle:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 4px; border-radius: 4px; }
+.patient-toggle .card-title { flex: 1; }
+.patient-toggle__chevron { transition: transform 0.2s; }
+.patient-card:not(.collapsed) .patient-toggle__chevron { transform: rotate(180deg); }
+.patient-card.collapsed .patient-body { display: none; }
+.patient-body { display: grid; gap: 12px; margin-top: 12px; }
+.watch-pill {
+  display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-top: 4px; padding: 2px 10px; border-radius: 999px;
+  background: var(--app-color-success-container); color: var(--app-color-on-success-container);
+}
+.watch-pill[hidden] { display: none; }
+.watch-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--app-color-success); animation: watch-pulse 1.6s ease-in-out infinite; }
+.watch-pill.away { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant); }
+.watch-pill.away .watch-dot { background: var(--md-sys-color-outline); animation: none; }
+@keyframes watch-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .watch-dot { animation: none; } }
 .age-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .age-row > * { min-width: 0; }
 .patient-chip { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; padding: 12px 8px 12px 16px; border-radius: 12px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
@@ -278,7 +304,7 @@ a { color: var(--md-sys-color-primary); }
 .status-pill.live { background: var(--app-color-success-container); color: var(--app-color-on-success-container); }
 .badges { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: 4px; }
 
-/* Live speech-to-text box (Sarvam, local testing) */
+/* Live speech-to-text box (Gemini Live) */
 .live-box .card-body { gap: 8px; }
 .live-text { margin: 0; white-space: pre-wrap; min-height: 1.5em; }
 .live-text.interim { opacity: 0.7; }
@@ -309,7 +335,7 @@ a { color: var(--md-sys-color-primary); }
 .attachment .thumb { width: 40px; height: 40px; }
 .attachment--audio { flex: 1; }
 .attachment--audio .audio-preview { margin: 0; width: 100%; height: 36px; min-width: 0; }
-.live-english { margin-top: -6px; padding: 0 16px; max-height: 3em; overflow: hidden; }
+.live-english { margin-top: -6px; padding: 0 16px; max-height: 4.5em; overflow: hidden; white-space: pre-line; }
 .switch-list.compact { padding: 0 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; }
 .switch-list.compact .switch-row { min-height: 48px; gap: 12px; grid-template-columns: 20px 1fr auto; --md-icon-size: 20px; }
 .switch-list.compact md-divider { margin: 0 -12px; }
@@ -320,3 +346,56 @@ a { color: var(--md-sys-color-primary); }
 .capture .send-button { width: auto; min-width: 200px; --md-filled-button-container-height: 44px; }
 /* The visit screen has no fixed bottom bar, so it doesn't need the space reserved for one. */
 main:has(> #view-capture:not([hidden])) { padding-bottom: 12px; padding-top: 12px; }
+
+/* Optional on-phone Gemma helper (AI-generated suggestions, never answers). */
+.gemma-card .card-body { gap: 8px; padding: 12px; }
+.gemma-card .card-title { gap: 8px; --md-icon-size: 20px; }
+.gemma-card p { margin: 0; }
+.gemma-result { display: grid; gap: 6px; }
+.gemma-disclaimer { display: flex; align-items: flex-start; gap: 6px; --md-icon-size: 16px; }
+.danger-list li.gemma-highlight { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); border-radius: 8px; outline: none; }
+
+/* Rash photo check (AI hint about how the skin looks; never a diagnosis). */
+.photo-check { border-color: var(--md-sys-color-tertiary); }
+.photo-check .card-body p, .photo-check .card-body ul { margin: 0; }
+.photo-check__pattern { color: var(--md-sys-color-on-tertiary-container); }
+.photo-check__signs { color: var(--md-sys-color-error); }
+
+/* ---- Doctor replies: colour by the doctor's decision (draft): refer now red, follow-up yellow,
+   more information needed blue, no further action green. ---- */
+.doctor-reply { border-left: 6px solid var(--reply-accent); --md-filled-card-container-color: var(--reply-bg); color: var(--reply-fg); }
+.doctor-reply .card-title, .doctor-reply .outcome { color: var(--reply-fg); }
+.doctor-reply .on-surface-variant { color: color-mix(in srgb, var(--reply-fg) 78%, transparent); }
+.doctor-reply--urgent, .case-item--urgent, .reply-alert--urgent { --reply-bg: var(--md-sys-color-error-container); --reply-fg: var(--md-sys-color-on-error-container); --reply-accent: var(--md-sys-color-error); }
+.doctor-reply--followup, .case-item--followup, .reply-alert--followup { --reply-bg: var(--app-color-warning-container); --reply-fg: var(--app-color-on-warning-container); --reply-accent: var(--app-color-warning); }
+.doctor-reply--info, .case-item--info, .reply-alert--info { --reply-bg: var(--md-sys-color-primary-container); --reply-fg: var(--md-sys-color-on-primary-container); --reply-accent: var(--md-sys-color-primary); }
+.doctor-reply--ok, .case-item--ok, .reply-alert--ok { --reply-bg: var(--app-color-success-container); --reply-fg: var(--app-color-on-success-container); --reply-accent: var(--app-color-success); }
+
+/* A visit with a reply carries its colour on the left; an unread reply is filled in and badged. */
+.case-list md-list-item.case-item--replied { box-shadow: inset 5px 0 0 var(--reply-accent); }
+.case-list md-list-item.case-item--unread {
+  --md-list-item-container-color: var(--reply-bg);
+  --md-list-item-label-text-color: var(--reply-fg);
+  --md-list-item-supporting-text-color: var(--reply-fg);
+  --md-list-item-trailing-supporting-text-color: var(--reply-fg);
+  background: var(--reply-bg);
+}
+.reply-badge {
+  display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 999px; vertical-align: middle;
+  background: var(--reply-accent); color: var(--md-sys-color-surface); font: 500 11px/18px var(--md-ref-typeface-plain);
+}
+
+/* "The doctor replied" alert under the app bar, in the decision's colour. */
+.reply-alert {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 8px 10px 16px;
+  background: var(--reply-bg); color: var(--reply-fg); border-bottom: 3px solid var(--reply-accent);
+  box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--md-sys-color-shadow) 60%, transparent);
+}
+.reply-alert[hidden] { display: none; }
+.reply-alert__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--reply-accent); color: var(--md-sys-color-surface); }
+.reply-alert__text { display: grid; flex: 1; min-width: 0; }
+.reply-alert__text span { overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: no-preference) {
+  .reply-alert:not([hidden]) { animation: reply-in 240ms ease-out; }
+  @keyframes reply-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+}

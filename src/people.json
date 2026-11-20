@@ -1,5 +1,5 @@
 {
-  "_note": "DEMO people and places. Names are made up; places are real areas with approximate coordinates. Jawadhu Hills is a remote tribal hill block about 190 km from Chennai. The id must match the id in ACCESS_CODES.",
+  "_note": "DEMO people and places. Names are made up; places are real areas with approximate coordinates. Jawadhu Hills is a remote tribal hill block about 190 km from Chennai. The id must match the id in ACCESS_CODES. Profile figures (households, distances) are illustrative; phone numbers are masked placeholders.",
   "ashas": [
     {
       "id": "asha-001",
@@ -10,7 +10,12 @@
       "state": "Tamil Nadu",
       "phc": "PHC Jamunamarathur",
       "language": "ta",
-      "doctorId": "dr-001"
+      "doctorId": "dr-001",
+      "since": 2016,
+      "households": 212,
+      "population": 940,
+      "phone": "98xxxxxx41",
+      "travel": { "toPhcKm": 9, "toDoctorKm": 72, "note": "Hill road, about 30 minutes to the PHC by jeep" }
     },
     {
       "id": "asha-002",
@@ -21,7 +26,12 @@
       "state": "Tamil Nadu",
       "phc": "PHC Jamunamarathur",
       "language": "ta",
-      "doctorId": "dr-001"
+      "doctorId": "dr-001",
+      "since": 2019,
+      "households": 168,
+      "population": 730,
+      "phone": "94xxxxxx07",
+      "travel": { "toPhcKm": 6, "toDoctorKm": 68, "note": "Bus every 2 hours to Jamunamarathur" }
     }
   ],
   "doctors": [

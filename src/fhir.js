@@ -35,6 +35,7 @@ export function buildFhirBundle(record, { asha } = {}) {
         status: record.consent?.given ? 'active' : 'rejected',
         scope: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/consentscope', code: 'patient-privacy' }] },
         category: [{ text: 'DPDP Act 2023: verbal consent to share photo and voice note with the doctor' }],
+        policyRule: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'OPTIN' }], text: 'Digital Personal Data Protection Act 2023 (India)' },
         patient: { reference: u('patient') },
         dateTime: record.consent?.at
       }

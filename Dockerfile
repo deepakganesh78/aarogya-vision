@@ -1,12 +1,12 @@
 # Built by Cloud Build via `gcloud run deploy --source .` (see scripts/deploy-cloudrun.sh).
-FROM node:24-slim AS build
+FROM mirror.gcr.io/library/node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM node:24-slim
+FROM mirror.gcr.io/library/node:24-slim
 ENV NODE_ENV=production
 ENV PORT=8080
 WORKDIR /app

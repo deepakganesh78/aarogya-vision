@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0056d2" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Aarogya-Vision · Doctor dashboard</title>
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/vendor/theme.css" />
+    <link rel="stylesheet" href="/vendor/fonts.css" />
+    <link rel="stylesheet" href="/css/live.css" />
+    <link rel="modulepreload" href="/vendor/material.js" />
+    <link rel="modulepreload" href="/vendor/three.js" />
+    <script type="module" src="/js/live-app.js"></script>
+  </head>
+  <body class="live" data-sheet="attention">
+    <canvas
+      id="scene"
+      class="scene"
+      tabindex="0"
+      role="img"
+      aria-label="3D map of a rural health block: villages and farmland, health centres, medicine couriers, ambulances and traffic. Homes are red for an urgent case and yellow for a doctor review today. The panels and tables show the same information."
+    ></canvas>
+    <div id="labels" class="labels"></div>
+    <div id="webgl-fallback" class="fallback glass md-typescale-body-large" role="status" hidden>
+      <md-icon data-icon="view_in_ar"></md-icon>
+      <span>The 3D map needs WebGL, which is not available here. The live figures and tables below still update.</span>
+    </div>
+
+    <header class="topbar glass">
+      <a class="brand" href="/live" title="Aarogya-Vision doctor dashboard">
+        <span class="brand__mark"><md-icon data-icon="local_hospital" data-filled></md-icon></span>
+        <span class="brand__text">
+          <span class="brand__name md-typescale-title-medium">Aarogya-Vision</span>
+          <span class="brand__sub md-typescale-label-small">Doctor dashboard</span>
+        </span>
+      </a>
+      <span class="district md-typescale-label-large">Jawadhu Hills block</span>
+
+      <md-icon-button id="search-toggle" class="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="search"><md-icon data-icon="search"></md-icon></md-icon-button>
+      <div class="search" role="search">
+        <md-outlined-text-field id="search" type="search" placeholder="Search cases, villages, runs" aria-label="Search cases, villages, runs, vehicles, centres and places" autocomplete="off">
+          <md-icon slot="leading-icon" data-icon="search"></md-icon>
+          <span slot="trailing-icon" class="kbd md-typescale-label-small" aria-hidden="true">Ctrl K</span>
+        </md-outlined-text-field>
+        <md-menu id="search-menu" anchor="search" positioning="popover" default-focus="none" skip-restore-focus></md-menu>
+      </div>
+
+      <span class="menu-anchor">
+        <md-outlined-button id="zone-button" class="zone-button" aria-haspopup="menu">
+          <md-icon slot="icon" data-icon="location_on"></md-icon>
+          <span id="zone-name">Whole block</span>
+        </md-outlined-button>
+        <md-menu id="zone-menu" anchor="zone-button" positioning="popover"></md-menu>
+      </span>
+
+      <span class="menu-anchor">
+        <md-text-button id="season-button" class="season-button" aria-haspopup="menu">
+          <md-icon slot="icon" id="season-icon" data-icon="sunny"></md-icon>
+          <span id="weather-text">34 °C · Sunny</span>
+        </md-text-button>
+        <md-menu id="season-menu" anchor="season-button" positioning="popover"></md-menu>
+      </span>
+
+      <div class="clock" aria-label="Current time">
+        <span id="clock-date" class="md-typescale-label-small"></span>
+        <span id="clock-time" class="md-typescale-title-small"></span>
+      </div>
+      <span class="live-badge md-typescale-label-small" title="Animated live">LIVE</span>
+      <button id="queue-chip" class="queue-chip demo md-typescale-label-medium" type="button" title="Sign in as a doctor to see real cases from rural health workers">
+        <md-icon data-icon="lock"></md-icon><span id="queue-text">Doctor sign in</span>
+      </button>
+
+      <span class="menu-anchor">
+        <md-icon-button id="alerts-button" aria-label="Alerts" aria-haspopup="menu"><md-icon data-icon="notifications"></md-icon></md-icon-button>
+        <span id="alerts-badge" class="badge md-typescale-label-small" aria-hidden="true" hidden></span>
+        <md-menu id="alerts-menu" anchor="alerts-button" positioning="popover" class="alerts-menu"></md-menu>
+      </span>
+
+      <md-icon-button id="night-toggle" toggle aria-label="Night view">
+        <md-icon data-icon="light_mode"></md-icon>
+        <md-icon slot="selected" data-icon="dark_mode"></md-icon>
+      </md-icon-button>
+
+      <md-icon-button id="phone-toggle" toggle aria-label="Show the rural worker app" title="Rural worker app (phone)">
+        <md-icon data-icon="mobile"></md-icon>
+        <md-icon slot="selected" data-icon="close"></md-icon>
+      </md-icon-button>
+
+      <span class="menu-anchor">
+        <md-icon-button id="user-button" aria-label="Account and about" aria-haspopup="menu"><span id="avatar" class="avatar md-typescale-label-large" aria-hidden="true">LD</span></md-icon-button>
+        <md-menu id="user-menu" anchor="user-button" positioning="popover">
+          <md-menu-item id="user-name" disabled>
+            <div slot="headline" id="user-headline">Lead doctor (demo)</div>
+            <div slot="supporting-text" id="user-role">Not signed in: synthetic data only</div>
+          </md-menu-item>
+          <md-menu-item id="open-console" href="/doctor/classic">
+            <md-icon slot="start" data-icon="inbox"></md-icon>
+            <div slot="headline">Case list (classic view)</div>
+          </md-menu-item>
+          <md-menu-item id="about-item" disabled>
+            <md-icon slot="start" data-icon="info"></md-icon>
+            <div slot="headline">Simulated block, real queue when signed in</div>
+            <div slot="supporting-text">Prototype. Not for clinical use</div>
+          </md-menu-item>
+        </md-menu>
+      </span>
+    </header>
+
+    <section id="kpis" class="kpis" aria-label="Key figures">
+      <article class="kpi glass" id="kpi-cases">
+        <span class="kpi__icon kpi__icon--cases"><md-icon data-icon="home"></md-icon></span>
+        <div class="kpi__body">
+          <span class="kpi__label md-typescale-label-medium">Open home-visit cases</span>
+          <span class="kpi__value md-typescale-headline-small" data-value>0</span>
+          <span class="kpi__delta md-typescale-label-small" data-delta></span>
+        </div>
+        <div class="sevbar" data-sevbar role="img" aria-label="Open cases by level"><span class="sevbar__urgent"></span><span class="sevbar__priority"></span></div>
+      </article>
+      <article class="kpi glass" id="kpi-patients">
+        <span class="kpi__icon"><md-icon data-icon="groups"></md-icon></span>
+        <div class="kpi__body">
+          <span class="kpi__label md-typescale-label-medium">Patients this hour</span>
+          <span class="kpi__value md-typescale-headline-small" data-value>0</span>
+          <span class="kpi__delta md-typescale-label-small" data-delta></span>
+        </div>
+        <svg class="spark" data-spark viewBox="0 0 84 32" aria-hidden="true"></svg>
+      </article>
+      <article class="kpi glass" id="kpi-delivery">
+        <span class="kpi__icon"><md-icon data-icon="timer"></md-icon></span>
+        <div class="kpi__body">
+          <span class="kpi__label md-typescale-label-medium">Avg medicine delivery</span>
+          <span class="kpi__value md-typescale-headline-small" data-value>0</span>
+          <span class="kpi__delta md-typescale-label-small" data-delta></span>
+        </div>
+        <svg class="spark" data-spark viewBox="0 0 84 32" aria-hidden="true"></svg>
+      </article>
+      <article class="kpi glass" id="kpi-doctors">
+        <span class="kpi__icon"><md-icon data-icon="stethoscope"></md-icon></span>
+        <div class="kpi__body">
+          <span class="kpi__label md-typescale-label-medium">Doctors on duty</span>
+          <span class="kpi__value md-typescale-headline-small" data-value>0</span>
+          <span class="kpi__delta md-typescale-label-small" data-delta></span>
+        </div>
+        <md-circular-progress class="ring" data-ring value="0" aria-label="Share of rostered doctors on duty"></md-circular-progress>
+      </article>
+      <md-icon-button class="collapse-btn kpis-toggle" data-collapse="kpis" aria-label="Collapse key figures" aria-expanded="true"><md-icon data-icon="keyboard_arrow_up"></md-icon></md-icon-button>
+    </section>
+
+    <div id="legend" class="legend glass md-typescale-label-small" role="note" aria-label="Map colours">
+      <button class="legend__title md-typescale-label-medium" type="button" data-collapse="legend" aria-expanded="true">Homes<md-icon data-icon="keyboard_arrow_up"></md-icon></button>
+      <span class="legend__item"><span class="swatch" data-swatch="URGENT"></span>Urgent: refer now</span>
+      <span class="legend__item"><span class="swatch" data-swatch="PRIORITY"></span>Doctor review today</span>
+      <span class="legend__item"><span class="swatch" data-swatch="none"></span>No open case</span>
+      <span class="legend__item"><span class="swatch swatch--facility" data-swatch="facility"></span>Health facility</span>
+    </div>
+
+    <p class="notice md-typescale-label-medium" role="note">
+      <md-icon data-icon="info"></md-icon>
+      <span>Prototype with synthetic demo data. Not for clinical use. Doctors make every clinical decision.</span>
+    </p>
+
+    <section id="attention" class="panel attention glass" aria-labelledby="attention-title">
+      <div class="panel__header">
+        <h2 id="attention-title" class="md-typescale-title-small"><md-icon data-icon="location_on"></md-icon>Needs attention <span id="attention-count" class="count-badge" hidden></span></h2>
+        <md-icon-button class="collapse-btn" data-collapse="attention" aria-label="Collapse needs attention" aria-expanded="true"><md-icon data-icon="keyboard_arrow_up"></md-icon></md-icon-button>
+      </div>
+      <div id="attention-list" class="attention__list"></div>
+    </section>
+
+    <aside id="detail" class="panel detail glass" aria-label="Selection details">
+      <md-icon-button id="cases-full" class="collapse-btn full-toggle" aria-label="Show cases full screen" aria-pressed="false"><md-icon data-icon="open_in_full"></md-icon></md-icon-button>
+      <md-icon-button class="collapse-btn detail-toggle" data-collapse="detail" aria-label="Collapse the side panel" aria-expanded="true"><md-icon data-icon="keyboard_arrow_up"></md-icon></md-icon-button>
+      <div id="detail-content" class="detail__content" aria-live="polite"></div>
+    </aside>
+
+    <section id="tracker" class="panel tracker glass" aria-label="Run tracker">
+      <md-icon-button class="collapse-btn" data-collapse="tracker" aria-label="Collapse the run tracker" aria-expanded="true"><md-icon data-icon="keyboard_arrow_down"></md-icon></md-icon-button>
+      <div id="tracker-content" class="tracker__content"></div>
+    </section>
+
+    <section id="tables" class="panel tables glass" aria-label="Facilities, cases, runs and fleet">
+      <md-tabs id="table-tabs" aria-label="Table">
+        <md-primary-tab inline-icon data-tab="centres"><md-icon slot="icon" data-icon="local_hospital"></md-icon>Facilities</md-primary-tab>
+        <md-primary-tab inline-icon data-tab="cases"><md-icon slot="icon" data-icon="home"></md-icon>Cases</md-primary-tab>
+        <md-primary-tab inline-icon data-tab="runs"><md-icon slot="icon" data-icon="route"></md-icon>Runs</md-primary-tab>
+        <md-primary-tab inline-icon data-tab="fleet"><md-icon slot="icon" data-icon="electric_moped"></md-icon>Fleet</md-primary-tab>
+      </md-tabs>
+      <md-icon-button class="collapse-btn" data-collapse="tables" aria-label="Collapse the tables" aria-expanded="true"><md-icon data-icon="keyboard_arrow_down"></md-icon></md-icon-button>
+      <div class="table-wrap" id="table-wrap" tabindex="0" aria-label="Table contents"></div>
+    </section>
+
+    <section id="active" class="panel active glass" aria-labelledby="active-title">
+      <div class="panel__header">
+        <h2 id="active-title" class="md-typescale-title-small">Active runs</h2>
+        <md-text-button id="view-all-runs">View all<md-icon slot="icon" data-icon="route"></md-icon></md-text-button>
+        <md-icon-button class="collapse-btn" data-collapse="active" aria-label="Collapse active runs" aria-expanded="true"><md-icon data-icon="keyboard_arrow_down"></md-icon></md-icon-button>
+      </div>
+      <div class="table-wrap" id="active-wrap"></div>
+    </section>
+
+    <div class="map-controls glass" role="group" aria-label="Map controls">
+      <md-icon-button id="zoom-in" aria-label="Zoom in"><md-icon data-icon="zoom_in"></md-icon></md-icon-button>
+      <md-icon-button id="zoom-out" aria-label="Zoom out"><md-icon data-icon="zoom_out"></md-icon></md-icon-button>
+      <md-icon-button id="rotate-left" aria-label="Rotate left"><md-icon data-icon="rotate_left"></md-icon></md-icon-button>
+      <md-icon-button id="rotate-right" aria-label="Rotate right"><md-icon data-icon="rotate_right"></md-icon></md-icon-button>
+      <md-icon-button id="recentre" aria-label="Show the whole block"><md-icon data-icon="my_location"></md-icon></md-icon-button>
+      <md-icon-button id="pause" toggle aria-label="Pause the simulation">
+        <md-icon data-icon="pause"></md-icon>
+        <md-icon slot="selected" data-icon="play_arrow"></md-icon>
+      </md-icon-button>
+    </div>
+
+    <nav class="sheet-nav glass" aria-label="Panels">
+      <md-tabs id="sheet-tabs">
+        <md-primary-tab inline-icon data-sheet="attention"><md-icon slot="icon" data-icon="location_on"></md-icon>Attention</md-primary-tab>
+        <md-primary-tab inline-icon data-sheet="tracker"><md-icon slot="icon" data-icon="route"></md-icon>Tracker</md-primary-tab>
+        <md-primary-tab inline-icon data-sheet="detail"><md-icon slot="icon" data-icon="info"></md-icon>Details</md-primary-tab>
+        <md-primary-tab inline-icon data-sheet="tables"><md-icon slot="icon" data-icon="inventory_2"></md-icon>Tables</md-primary-tab>
+        <md-primary-tab inline-icon data-sheet="map"><md-icon slot="icon" data-icon="view_in_ar"></md-icon>Map</md-primary-tab>
+      </md-tabs>
+    </nav>
+
+    <div id="phone" class="phone" hidden>
+      <div class="phone__label md-typescale-label-large"><md-icon data-icon="mobile"></md-icon>Rural worker app (ASHA) · demo phone</div>
+      <div class="phone__device">
+        <span class="phone__notch" aria-hidden="true"></span>
+        <iframe id="phone-frame" class="phone__screen" title="Rural worker app" allow="microphone; camera"></iframe>
+      </div>
+    </div>
+
+    <div id="new-case-toast" class="toast glass" role="status" hidden>
+      <span class="toast__icon"><md-icon data-icon="person"></md-icon></span>
+      <div class="toast__text">
+        <span id="toast-title" class="md-typescale-title-small"></span>
+        <span id="toast-sub" class="md-typescale-body-small"></span>
+      </div>
+      <md-filled-button id="toast-view">View case</md-filled-button>
+      <md-icon-button id="toast-close" aria-label="Dismiss"><md-icon data-icon="close"></md-icon></md-icon-button>
+    </div>
+
+    <md-dialog id="photo-dialog" aria-label="Photo from the ASHA worker">
+      <div slot="headline" id="photo-headline">Photo from the ASHA worker</div>
+      <div slot="content" class="photo-dialog__body"><img id="photo-large" alt="" /></div>
+      <div slot="actions"><md-text-button id="photo-close">Close</md-text-button></div>
+    </md-dialog>
+
+    <md-dialog id="signin-dialog" aria-label="Doctor sign in">
+      <div slot="headline">Doctor sign in</div>
+      <form slot="content" id="signin-form" method="dialog" class="signin-form">
+        <p class="md-typescale-body-medium">Sign in to see real cases from ASHA workers on the map. ASHA workers see that you are watching.</p>
+        <md-outlined-text-field id="signin-code" label="Access code" autocomplete="off" autocapitalize="off" spellcheck="false" required></md-outlined-text-field>
+        <p id="signin-error" class="signin-error md-typescale-body-small" role="alert" hidden></p>
+      </form>
+      <div slot="actions">
+        <md-text-button id="signin-cancel" type="button">Cancel</md-text-button>
+        <md-filled-button id="signin-submit" type="button">Sign in</md-filled-button>
+      </div>
+    </md-dialog>
+
+    <div id="announcer" class="visually-hidden" aria-live="polite"></div>
+  </body>
+</html>

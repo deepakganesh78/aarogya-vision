@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { SIGN_IDS } from '../../public/shared/dangerSigns.js';
+import { SKIN_PATTERN_IDS } from '../../public/shared/skinPatterns.js';
 
-export const PROMPT_VERSION = 'intake-v3-all-ages';
+export const PROMPT_VERSION = 'intake-v4-skin-pattern';
 
 const nullable = (schema) => ({ anyOf: [schema, { type: 'null' }] });
 
@@ -138,5 +139,36 @@ export function parseAiOutput(text) {
     missingInformation: out.missing_information,
     followUpQuestions: out.follow_up_questions.map((q) => ({ english: q.english, workerLanguage: q.worker_language })),
     uncertaintyNotes: out.uncertainty_notes
+  };
+}
+
+// Rash photo check: one visual pattern, never a disease.
+export const SKIN_PATTERN_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    pattern: { type: 'string', enum: SKIN_PATTERN_IDS },
+    confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+    visible_features: { type: 'array', maxItems: 4, items: { type: 'string' }, description: 'Neutral visual descriptions. No disease names.' }
+  },
+  required: ['pattern', 'confidence', 'visible_features']
+};
+
+const SkinPatternOutput = z.object({
+  pattern: z.enum(SKIN_PATTERN_IDS),
+  confidence: z.enum(['low', 'medium', 'high']),
+  visible_features: z.array(z.string().max(160)).max(4)
+});
+
+// Words that would turn a visual description into a diagnosis; such features are dropped.
+const DISEASE_WORDS = /\b(scabies|ringworm|tinea|eczema|dermatitis|psoriasis|measles|chicken ?pox|varicella|impetigo|cellulitis|leprosy|fungal|bacterial|viral|infection|allerg|herpes|shingles|urticaria|hives|acne|diagnos)/i;
+
+/** Parse and sanitise Gemini's rash-pattern answer. Throws on anything outside the schema. */
+export function parseSkinPattern(text) {
+  const out = SkinPatternOutput.parse(JSON.parse(text));
+  return {
+    pattern: out.pattern,
+    // A guess is never shown as certain: "high" needs a clear, classifiable photo.
+    confidence: ['unclear', 'not_skin'].includes(out.pattern) ? 'low' : out.confidence,
+    features: out.visible_features.map((f) => f.trim()).filter((f) => f && !DISEASE_WORDS.test(f))
   };
 }

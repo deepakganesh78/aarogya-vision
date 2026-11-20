@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import multer from 'multer';
+import { SKIN_PATTERN_VERSION, getSkinPattern } from '../public/shared/skinPatterns.js';
 import { levelRank, triageAssessment } from '../public/shared/triage.js';
 import { applyAutofill } from './autofill.js';
 import { buildFhirBundle } from './fhir.js';
 import { patientListItem, registerVisit } from './patients.js';
-import { CaseSubmission, DecisionInput, identifyMedia } from './validation.js';
+import { CaseSubmission, DecisionInput, DispatchInput, identifyMedia } from './validation.js';
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const OPEN_STATUSES = new Set(['received', 'processing', 'awaiting_review']);
@@ -15,20 +16,24 @@ const OPEN_STATUSES = new Set(['received', 'processing', 'awaiting_review']);
 export const PROTOTYPE_NOTICE =
   'Prototype for demonstration with synthetic or role-play cases only. Not for clinical use. AI output is a documentation aid; the doctor makes every clinical decision.';
 
+// Brute-force protection: only failed sign-ins count, so real users are never locked out by signing in.
 function createLoginLimiter({ max = 10, windowMs = 5 * 60 * 1000 } = {}) {
-  const attempts = new Map();
-  return (req, res, next) => {
-    const key = req.ip;
-    const now = Date.now();
-    const entry = attempts.get(key);
-    if (!entry || now - entry.start > windowMs) {
-      attempts.set(key, { start: now, count: 1 });
-      return next();
-    }
-    entry.count += 1;
-    if (entry.count > max) return res.status(429).json({ error: 'too_many_attempts' });
+  const failures = new Map();
+  const current = (key, now) => {
+    const entry = failures.get(key);
+    return entry && now - entry.start <= windowMs ? entry : null;
+  };
+  const check = (req, res, next) => {
+    if ((current(req.ip, Date.now())?.count || 0) >= max) return res.status(429).json({ error: 'too_many_attempts' });
     next();
   };
+  check.fail = (req) => {
+    const now = Date.now();
+    const entry = current(req.ip, now);
+    if (entry) entry.count += 1;
+    else failures.set(req.ip, { start: now, count: 1 });
+  };
+  return check;
 }
 
 function workerView(record) {
@@ -51,8 +56,20 @@ function workerView(record) {
           instructions: record.decision.instructions,
           translated: record.decision.translated || null,
           followUpDate: record.decision.followUpDate || null,
+          medicines: record.decision.medicines || [],
+          referTo: record.decision.referTo || null,
           at: record.decision.at,
           by: { name: record.decision.by.name }
+        }
+      : null,
+    dispatch: record.dispatch
+      ? {
+          status: record.dispatch.status,
+          stops: record.dispatch.stops.map((s) => ({ name: s.name, items: s.items })),
+          courier: { name: record.dispatch.courier.name },
+          etaMin: record.dispatch.etaMin,
+          at: record.dispatch.at,
+          deliveredAt: record.dispatch.deliveredAt || null
         }
       : null
   };
@@ -72,7 +89,8 @@ function doctorListItem(record) {
     hasPhoto: Boolean(record.media?.photo),
     hasAudio: Boolean(record.media?.audio),
     decisionOutcome: record.decision?.outcome || null,
-    decidedAt: record.decision?.at || null
+    decidedAt: record.decision?.at || null,
+    dispatchStatus: record.dispatch?.status || null
   };
 }
 
@@ -86,6 +104,13 @@ function sortForQueue(records) {
   });
 }
 
+/** Origin of a cross-origin GEMMA_MODEL_URL, for connect-src. Same-origin paths need nothing extra. */
+function gemmaModelOrigin(config) {
+  const url = config.gemma?.modelUrl;
+  if (!url || url.startsWith('/')) return [];
+  return [new URL(url).origin];
+}
+
 /**
  * @param {{config: object, store: object, audit: object, processor: object, provider: object|null, auth: object, guidelines: object}} deps
  */
@@ -93,6 +118,10 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
+  // Cloud Run's own URL (from LIVE_WS_URL) and the project's Firebase Hosting sites that may call it directly.
+  const directOrigin = config.speech?.wsUrl ? config.speech.wsUrl.replace(/^wss:/, 'https:') : null;
+  const project = config.ai?.project || config.analytics?.projectId;
+  const hostingOrigins = new Set(project ? [`https://${project}.web.app`, `https://${project}.firebaseapp.com`] : []);
 
   app.use(
     helmet({
@@ -100,7 +129,8 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
         useDefaults: true,
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          // 'wasm-unsafe-eval' lets the self-hosted MediaPipe WASM (on-phone Gemma helper) compile. No JS eval.
+          scriptSrc: config.gemma ? ["'self'", "'wasm-unsafe-eval'"] : ["'self'"],
           styleSrc: ["'self'"],
           styleSrcElem: ["'self'"],
           // Material Web (Lit) sets some component styles via style attributes on first render.
@@ -108,11 +138,14 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
           styleSrcAttr: ["'unsafe-inline'"],
           imgSrc: ["'self'", 'blob:', 'data:'],
           mediaSrc: ["'self'", 'blob:'],
-          connectSrc: ["'self'"],
+          // blob: covers re-reads of object URLs this page created itself (photos and voice notes).
+          connectSrc: ["'self'", 'blob:', ...gemmaModelOrigin(config), ...(config.speech?.wsUrl ? [new URL(config.speech.wsUrl).origin, directOrigin] : [])],
           workerSrc: ["'self'"],
           manifestSrc: ["'self'"],
           objectSrc: ["'none'"],
-          frameAncestors: ["'none'"],
+          // Same-origin only: the doctor dashboard shows the worker app in a phone frame for the demo.
+          frameAncestors: ["'self'"],
+          frameSrc: ["'self'"],
           upgradeInsecureRequests: config.isProd ? [] : null
         }
       },
@@ -141,6 +174,7 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
 
   const requireWorker = auth.requireRole('worker');
   const requireDoctor = auth.requireRole('doctor');
+  const watching = new Map(); // doctor id -> open live-update connections
 
   api.get('/health', (req, res) => res.json({ ok: true }));
 
@@ -149,15 +183,22 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
       notice: PROTOTYPE_NOTICE,
       ai: { provider: config.ai.provider, model: config.ai.provider === 'gemini' ? String(config.ai.model).split(',')[0].trim() : null },
       usingDemoCodes: config.usingDemoCodes,
-      // Live text while the worker speaks (Sarvam, local testing only).
-      liveSpeech: config.speech?.provider === 'sarvam' ? { provider: 'sarvam', model: config.speech.model, localOnly: true } : null,
-      guidelineNotice: guidelines.notice
+      autoLogin: Boolean(config.autoLogin),
+      // Behind Firebase Hosting (which buffers server-sent events), live updates come straight from Cloud Run.
+      eventsUrl: directOrigin,
+      // Live text and spoken follow-up questions while the worker speaks (Gemini Live API).
+      liveSpeech: config.speech?.provider === 'gemini-live' ? { provider: 'gemini-live', model: config.speech.model, wsUrl: config.speech.wsUrl || null } : null,
+      guidelineNotice: guidelines.notice,
+      // Optional on-phone Gemma danger-sign helper; null hides it.
+      gemma: config.gemma ? { modelUrl: config.gemma.modelUrl } : null
     });
   });
 
-  api.post('/login', createLoginLimiter(), (req, res) => {
+  const loginLimiter = createLoginLimiter();
+  api.post('/login', loginLimiter, (req, res) => {
     const user = auth.findUserByCode(req.body?.code);
     if (!user) {
+      loginLimiter.fail(req);
       audit.log({ type: 'auth.failed', ip: req.ip });
       return res.status(401).json({ error: 'invalid_code' });
     }
@@ -165,19 +206,60 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
     res.json({ token: auth.issueToken(user), user });
   });
 
+  // Demo auto sign-in: the first ASHA or doctor account, no access code. Off unless config.autoLogin.
+  api.post('/login/auto', (req, res) => {
+    if (!config.autoLogin) return res.status(404).json({ error: 'not_found' });
+    const role = req.body?.role;
+    if (!['worker', 'doctor'].includes(role)) return res.status(400).json({ error: 'invalid_role' });
+    const entry = config.accessCodes.find((c) => c.role === role);
+    if (!entry) return res.status(404).json({ error: 'no_account' });
+    const user = { id: entry.id, name: entry.name, role: entry.role };
+    audit.log({ type: 'auth.login', actor: user.id, role: user.role, auto: true });
+    res.json({ token: auth.issueToken(user), user });
+  });
+
   api.get('/me', auth.requireRole(null), (req, res) => res.json({ user: req.user }));
 
-  // Profile card: the ASHA's village, block, PHC and assigned doctor (or the doctor's facility).
+  // Profile card: the ASHA's village, block and PHC. Cases go to a shared queue (any doctor can answer),
+  // so the worker sees how many doctors have the dashboard open right now rather than one named doctor.
   api.get('/profile', auth.requireRole(null), async (req, res) => {
     if (req.user.role === 'worker') {
       const asha = (await store.getAsha?.(req.user.id)) || null;
-      const doctor = asha?.doctorId ? (await store.getDoctor?.(asha.doctorId)) || null : null;
-      return res.json({ user: req.user, asha, doctor });
+      return res.json({ user: req.user, asha, doctorsOnline: watching.size });
     }
     res.json({ user: req.user, doctor: (await store.getDoctor?.(req.user.id)) || null });
   });
 
   // ---- Worker ---------------------------------------------------------------------------------
+
+  // Rash photo check for the ASHA phone: the visual pattern only, never a disease. Nothing is stored and
+  // the result never reaches the case or its urgency; the audit trail records only that a check ran.
+  const photoOnly = multer({ storage: multer.memoryStorage(), limits: { fileSize: config.maxPhotoBytes, files: 1, fields: 0 } }).single('photo');
+  api.post('/worker/photo-check', requireWorker, photoOnly, async (req, res) => {
+    if (!provider?.classifySkin) return res.status(503).json({ error: 'ai_unavailable' });
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'photo_required' });
+    const type = identifyMedia('photo', file.mimetype, file.buffer);
+    if (!type) return res.status(400).json({ error: 'photo_unsupported_type' });
+    try {
+      const result = await provider.classifySkin({ photo: { mimeType: type.mimeType, buffer: file.buffer } });
+      const pattern = getSkinPattern(result.pattern);
+      audit.log({ type: 'photo.pattern_checked', actor: req.user.id, provider: provider.name });
+      res.json({
+        pattern: pattern.id,
+        confidence: result.confidence,
+        features: result.features,
+        checks: pattern.checks,
+        retake: Boolean(pattern.retake),
+        provider: provider.name,
+        model: result.model || provider.model,
+        version: SKIN_PATTERN_VERSION
+      });
+    } catch (err) {
+      audit.log({ type: 'photo.pattern_failed', actor: req.user.id, provider: provider.name });
+      res.status(502).json({ error: 'ai_failed' });
+    }
+  });
 
   api.post('/cases', requireWorker, upload, async (req, res) => {
     let parsedJson;
@@ -311,18 +393,44 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   });
 
   // Live updates: server-sent events. EventSource cannot send headers, so the token comes as a query parameter.
+  // Open connections also tell ASHA workers whether their doctor is watching right now.
   api.get('/doctor/events', (req, res) => {
     const user = auth.verifyToken(String(req.query.token || ''));
     if (!user || user.role !== 'doctor') return res.status(401).json({ error: 'unauthorized' });
+    const origin = req.get('origin');
+    if (origin && hostingOrigins.has(origin)) res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin' });
     res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.flushHeaders?.();
     res.write('retry: 5000\n\n');
     const send = (e) => res.write(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
     const unsubscribe = events ? events.subscribe(send) : () => {};
+    watching.set(user.id, (watching.get(user.id) || 0) + 1);
     const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
     req.on('close', () => {
       clearInterval(ping);
       unsubscribe();
+      const n = (watching.get(user.id) || 1) - 1;
+      if (n > 0) watching.set(user.id, n);
+      else watching.delete(user.id);
+    });
+  });
+
+  // ASHA workers' profiles with today's case counts, for the block live view.
+  api.get('/doctor/ashas', requireDoctor, async (req, res) => {
+    const ashas = (await store.listAshas?.()) || [];
+    const all = await store.listAll();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    res.json({
+      ashas: ashas.map((a) => {
+        const mine = all.filter((r) => r.worker?.id === a.id);
+        return {
+          ...a,
+          casesToday: mine.filter((r) => Date.parse(r.receivedAt) >= today.getTime()).length,
+          openCases: mine.filter((r) => OPEN_STATUSES.has(r.status)).length,
+          lastCaseAt: mine.reduce((acc, r) => (!acc || r.receivedAt > acc ? r.receivedAt : acc), null)
+        };
+      })
     });
   });
 
@@ -396,6 +504,9 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
       outcome: parsed.data.outcome,
       instructions: parsed.data.instructions,
       followUpDate: parsed.data.followUpDate ?? null,
+      medicines: parsed.data.medicines || [],
+      referTo: parsed.data.referTo ?? null,
+      assessment: parsed.data.assessment || null,
       by: { id: req.user.id, name: req.user.name },
       at: new Date().toISOString(),
       translated: null
@@ -421,6 +532,42 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
     res.json({ case: updated });
   });
 
+  // Send the prescribed medicines: allowed once the doctor has replied with medicines, and once per case.
+  api.post('/doctor/cases/:id/dispatch', requireDoctor, async (req, res) => {
+    const parsed = DispatchInput.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'invalid_dispatch', issues: parsed.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })) });
+    }
+    const existing = await store.get(req.params.id).catch(() => null);
+    if (!existing) return res.status(404).json({ error: 'not_found' });
+    if (!existing.decision?.medicines?.length) return res.status(409).json({ error: 'no_prescription' });
+    if (existing.dispatch) return res.status(409).json({ error: 'already_dispatched' });
+    const dispatch = { ...parsed.data, status: 'on_the_way', by: { id: req.user.id, name: req.user.name }, at: new Date().toISOString(), deliveredAt: null };
+    const updated = await store.update(existing.id, (r) => {
+      r.dispatch = dispatch;
+      r.history.push({ at: dispatch.at, event: 'medicines_dispatched', by: req.user.id });
+    });
+    audit.log({ type: 'medicines.dispatched', actor: req.user.id, caseId: existing.id, stops: dispatch.stops.map((s) => s.id), courier: dispatch.courier.id });
+    events?.publish({ type: 'case.dispatch', caseId: existing.id, status: 'on_the_way', workerId: updated.worker.id });
+    res.status(201).json({ case: updated });
+  });
+
+  // The bike reached the patient. Idempotent: several open dashboards may report the same delivery.
+  api.post('/doctor/cases/:id/dispatch/delivered', requireDoctor, async (req, res) => {
+    const existing = await store.get(req.params.id).catch(() => null);
+    if (!existing?.dispatch) return res.status(404).json({ error: 'not_found' });
+    if (existing.dispatch.status === 'delivered') return res.json({ case: existing });
+    const at = new Date().toISOString();
+    const updated = await store.update(existing.id, (r) => {
+      r.dispatch.status = 'delivered';
+      r.dispatch.deliveredAt = at;
+      r.history.push({ at, event: 'medicines_delivered', by: req.user.id });
+    });
+    audit.log({ type: 'medicines.delivered', actor: req.user.id, caseId: existing.id });
+    events?.publish({ type: 'case.dispatch', caseId: existing.id, status: 'delivered', workerId: updated.worker.id });
+    res.json({ case: updated });
+  });
+
   api.post('/doctor/cases/:id/reprocess', requireDoctor, async (req, res) => {
     const existing = await store.get(req.params.id).catch(() => null);
     if (!existing) return res.status(404).json({ error: 'not_found' });
@@ -437,10 +584,18 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
 
   app.use('/api', api);
 
-  app.get('/doctor', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'doctor.html')));
+  // The 3D block view is the doctor dashboard and the opening screen. The ASHA worker app is at /asha.
+  // The earlier list-based console stays at /doctor/classic.
+  app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'live.html')));
+  app.get('/asha', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+  app.get('/doctor', (req, res) => res.redirect(302, '/live'));
+  app.get('/doctor/classic', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'doctor.html')));
   app.get('/offline-test', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'offline-test.html')));
+  // Block live view for lead doctors (same strict CSP as the other pages).
+  app.get('/live', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'live.html')));
   app.use(
     express.static(PUBLIC_DIR, {
+      index: false,
       setHeaders(res) {
         res.set('Cache-Control', 'no-cache');
       }

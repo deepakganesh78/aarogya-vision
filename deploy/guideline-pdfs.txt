@@ -1,0 +1,5 @@
+# Official guideline PDFs indexed in the Vertex AI RAG Engine corpus (scripts/rag-corpus.mjs).
+# One URL per line. Each must serve application/pdf. Add ICMR / MoHFW documents here and re-run the script.
+https://nhm.gov.in/images/pdf/programmes/child-health/guidelines/Revised_Home_Based_New_Born_Care_Operational_Guidelines_2014.pdf
+https://nhm.gov.in/images/pdf/programmes/child-health/guidelines/imnci_chart_booklet.pdf
+https://nhm.gov.in/images/pdf/programmes/maternal-health/guidelines/sba_guidelines_for_skilled_attendance_at_birth.pdf

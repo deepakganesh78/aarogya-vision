@@ -30,9 +30,10 @@ async function readOutbox(page) {
   );
 }
 
-// Patient details at the top of the visit screen (name, age, sex; pregnancy for women).
+// Optional patient details on the visit screen (name, age, sex; pregnancy for women), folded by default.
 async function fillPatient(page, { name, age, unit, sex }) {
   await expect(page.locator('#patient-card')).toBeVisible();
+  if (await page.locator('#patient-card.collapsed').count()) await page.locator('#patient-toggle').click();
   await page.locator('#p-name input').fill(name);
   await page.locator('#p-age input').fill(String(age));
   await page.locator('#p-unit').evaluate((select, value) => {
@@ -48,7 +49,7 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
   const workerCtx = await browser.newContext({ viewport: { width: 412, height: 915 }, permissions: ['microphone'] });
   const worker = await workerCtx.newPage();
   watchConsole(worker, problems);
-  await worker.goto('/');
+  await worker.goto('/asha');
   await expect(worker.getByRole('note')).toContainText('Not for clinical use');
   await worker.locator('#access-code input').fill('asha-demo');
   await worker.locator('#login-submit').click();
@@ -66,8 +67,10 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
   await worker.locator('md-menu-item[data-lang="ta"]').click();
   await expect.poll(() => worker.locator('#new-visit').evaluate((fab) => fab.label)).toBe('புதிய வருகை');
   await worker.locator('#new-visit').click();
+  // The patient card is required: always open, and Send stops until name, age and sex are in.
+  await expect(worker.locator('#patient-card')).not.toHaveClass(/collapsed/);
   await worker.locator('#send-case').click();
-  await expect(worker.locator('#patient-error')).toBeVisible();
+  await expect(worker.locator('#patient-error')).toHaveText('நோயாளியின் பெயரை எழுதுங்கள்.');
   await fillPatient(worker, { name: 'Baby of Kaveri', age: 8, unit: 'days', sex: 'female' });
   await expect(worker.locator('#take-photo')).toBeVisible();
   await expect(worker.locator('#record')).toBeVisible();
@@ -77,6 +80,8 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
 
   await worker.locator('#photo-input').setInputFiles('e2e/fixtures/synthetic-photo.jpg');
   await expect(worker.locator('#photo-item')).toBeVisible();
+  // Offline, the rash photo check says it needs the internet; the doctor still gets the photo.
+  await expect(worker.locator('#photo-check')).toContainText('இணையம் தேவை');
   await worker.locator('#send-case').click();
   await expect(worker.locator('#capture-error')).toContainText('ஒப்புதலை');
 
@@ -135,7 +140,8 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
   const doctorCtx = await browser.newContext({ viewport: { width: 1440, height: 960 } });
   const doctor = await doctorCtx.newPage();
   watchConsole(doctor, problems);
-  await doctor.goto('/doctor');
+  // The classic list console (the 3D dashboard flow is covered in live-view.spec.js).
+  await doctor.goto('/doctor/classic');
   await expect(doctor.locator('#ai-badge-text')).toHaveText('AI: MOCK stub (no model)');
   await doctor.locator('#access-code input').fill('doctor-demo');
   await doctor.locator('#login-submit').click();
@@ -162,12 +168,21 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
   await expect(detail).toContainText('What the ASHA sees (Tamil, machine-translated by MOCK)');
   await expect(doctor.locator('.queue-item')).toHaveCount(1);
 
-  // ---- Worker sees the reply ----
+  // ---- Worker sees the reply: an alert, and the visit highlighted in the decision's colour ----
   await worker.locator('#sync-now').click();
+  const alert = worker.locator('#reply-alert');
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText('மருத்துவர் பதில் அனுப்பினார்');
+  await expect(alert).toHaveClass(/reply-alert--urgent/);
   const replied = worker.locator('.case-item').filter({ hasText: 'மருத்துவர் பதிலளித்தார்' });
   await expect(replied).toHaveCount(1);
-  await replied.click();
+  await expect(replied).toHaveClass(/case-item--unread/);
+  await expect(replied).toHaveClass(/case-item--urgent/);
+  await expect(replied).toContainText('புதிய பதில்');
+  await alert.locator('md-filled-button').click();
+  await expect(alert).toBeHidden();
   const reply = worker.locator('.doctor-reply');
+  await expect(reply).toHaveClass(/doctor-reply--urgent/);
   await expect(reply.locator('h2')).toHaveText('மருத்துவரின் பதில்');
   await expect(reply.locator('.instructions')).toHaveText('[MOCK ta translation] Refer to the PHC now. Keep the baby warm and breastfeed on the way.');
   await expect(reply.locator('.original')).toHaveText('Refer to the PHC now. Keep the baby warm and breastfeed on the way.');
@@ -183,13 +198,33 @@ test('ASHA enters the patient, sends a photo or voice note; AI fills the rest; d
 });
 
 test('doctor dashboard rejects worker credentials and worker app rejects doctor credentials', async ({ page }) => {
-  await page.goto('/doctor');
+  await page.goto('/doctor/classic');
   await page.locator('#access-code input').fill('asha-demo');
   await page.locator('#login-submit').click();
   await expect(page.locator('#login-error')).toBeVisible();
 
-  await page.goto('/');
+  await page.goto('/asha');
   await page.locator('#access-code input').fill('doctor-demo');
   await page.locator('#login-submit').click();
   await expect(page.locator('#login-error')).toBeVisible();
+});
+
+test('rash photo check on the ASHA phone: how it looks and which danger signs to check, never a disease', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 } });
+  const page = await ctx.newPage();
+  const problems = [];
+  watchConsole(page, problems);
+  await page.goto('/asha');
+  await page.locator('#access-code input').fill('asha-demo');
+  await page.locator('#login-submit').click();
+  await page.locator('#new-visit').click();
+  await page.locator('#photo-input').setInputFiles('e2e/fixtures/synthetic-photo.jpg');
+  const check = page.locator('#photo-check');
+  await expect(check).toContainText('Blisters, pus spots or crusts');
+  await expect(check).toContainText('Also check for these danger signs');
+  await expect(check).toContainText('not a diagnosis');
+  await page.locator('#remove-photo').click();
+  await expect(check).toBeHidden();
+  expect(problems).toEqual([]);
+  await ctx.close();
 });

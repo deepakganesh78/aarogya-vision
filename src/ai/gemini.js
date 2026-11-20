@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
-import { AI_OUTPUT_JSON_SCHEMA, PROMPT_VERSION, parseAiOutput } from './schema.js';
-import { SYSTEM_INSTRUCTION, buildTranslationInstruction, buildUserPrompt } from './prompt.js';
+import { AI_OUTPUT_JSON_SCHEMA, PROMPT_VERSION, SKIN_PATTERN_JSON_SCHEMA, parseAiOutput, parseSkinPattern } from './schema.js';
+import { SKIN_PATTERN_INSTRUCTION, SYSTEM_INSTRUCTION, TRANSCRIPT_TRANSLATION_INSTRUCTION, buildTranslationInstruction, buildUserPrompt } from './prompt.js';
 
-function createClient(config) {
+export function createClient(config) {
   if (config.enterprise) {
     if (!config.project) throw new Error('GOOGLE_CLOUD_PROJECT is required when GOOGLE_GENAI_USE_ENTERPRISE=true');
     return new GoogleGenAI({ enterprise: true, project: config.project, location: config.location });
@@ -103,5 +103,25 @@ export function createGeminiProvider({ config, client }) {
     return out;
   }
 
-  return { name: 'gemini', model, promptVersion: PROMPT_VERSION, analyze, translate };
+  async function translateTranscript(text) {
+    const { response } = await generate({
+      contents: [{ role: 'user', parts: [{ text }] }],
+      config: { systemInstruction: TRANSCRIPT_TRANSLATION_INSTRUCTION, temperature: 0 }
+    });
+    assertNotBlocked(response);
+    return response?.text?.trim() || '';
+  }
+
+  /** Rash photo check: the visual pattern of one skin photo (never a disease). */
+  async function classifySkin({ photo }) {
+    const { response, model: used } = await generate({
+      contents: [{ role: 'user', parts: [{ text: 'Skin photo taken by the ASHA worker:' }, { inlineData: { mimeType: photo.mimeType, data: photo.buffer.toString('base64') } }] }],
+      config: { systemInstruction: SKIN_PATTERN_INSTRUCTION, responseMimeType: 'application/json', responseJsonSchema: SKIN_PATTERN_JSON_SCHEMA, temperature: 0 }
+    });
+    assertNotBlocked(response);
+    if (!response?.text) throw new Error('model returned an empty response');
+    return { ...parseSkinPattern(response.text), model: used };
+  }
+
+  return { name: 'gemini', model, promptVersion: PROMPT_VERSION, analyze, translate, translateTranscript, classifySkin };
 }

@@ -17,6 +17,7 @@
   </head>
   <body class="worker">
     <header class="top-app-bar">
+      <md-icon-button id="back-to-dashboard" href="/live" data-i18n-aria="back_to_dashboard" hidden><md-icon data-icon="arrow_back"></md-icon></md-icon-button>
       <div class="top-app-bar__brand">
         <md-icon data-icon="child_care" data-filled></md-icon>
         <span class="top-app-bar__title md-typescale-title-large" data-i18n="app_name"></span>
@@ -36,6 +37,9 @@
       <md-icon data-icon="cloud_off"></md-icon>
       <span data-i18n="offline"></span>
     </div>
+
+    <!-- Doctor replied: in-app alert (a system notification too, when allowed). Built by worker-app.js. -->
+    <div id="reply-alert" class="reply-alert" role="alert" hidden></div>
 
     <main>
       <!-- Sign in -->
@@ -64,8 +68,10 @@
             <div class="stack-xs">
               <div id="profile-name" class="md-typescale-title-medium"></div>
               <div id="profile-place" class="md-typescale-body-medium on-surface-variant"></div>
+              <div id="profile-stats" class="md-typescale-body-small on-surface-variant"></div>
               <div id="profile-phc" class="md-typescale-body-small on-surface-variant"></div>
               <div id="profile-doctor" class="md-typescale-body-small on-surface-variant"></div>
+              <span id="doctor-watch" class="watch-pill md-typescale-label-medium" role="status" hidden><span class="watch-dot" aria-hidden="true"></span><span id="doctor-watch-text"></span></span>
             </div>
           </div>
         </md-outlined-card>
@@ -86,47 +92,13 @@
         <md-fab id="new-visit" class="fab" variant="primary" data-i18n-label="new_visit"><md-icon slot="icon" data-icon="add"></md-icon></md-fab>
       </section>
 
-      <!-- New visit: patient details, photo and/or voice, note, consent, send -->
+      <!-- New visit: photo and/or voice first; optional patient details, note, consent, send -->
       <section id="view-capture" class="view capture" hidden>
         <div class="page-header">
           <md-icon-button id="cancel-capture" data-i18n-aria="cancel"><md-icon data-icon="close"></md-icon></md-icon-button>
           <h1 class="md-typescale-title-large" data-i18n="new_visit"></h1>
         </div>
 
-        <md-outlined-card id="patient-card" class="card patient-card">
-          <div class="card-body">
-            <div class="row space-between card-head">
-              <h2 class="card-title md-typescale-title-small"><md-icon data-icon="person"></md-icon><span data-i18n="patient_details"></span></h2>
-              <span id="patient-status" class="badge badge--neutral" hidden></span>
-            </div>
-            <div class="name-wrap">
-              <md-outlined-text-field id="p-name" data-i18n-label="name" autocomplete="off" required></md-outlined-text-field>
-              <md-list id="patient-suggestions" class="suggestions" aria-label="Matching patients" hidden></md-list>
-            </div>
-            <div class="age-row">
-              <md-outlined-text-field id="p-age" data-i18n-label="age_value" type="number" inputmode="decimal" min="0" max="120" required></md-outlined-text-field>
-              <md-outlined-select id="p-unit" data-i18n-label="age_unit">
-                <md-select-option value="days"><div slot="headline" data-i18n="unit_days"></div></md-select-option>
-                <md-select-option value="weeks"><div slot="headline" data-i18n="unit_weeks"></div></md-select-option>
-                <md-select-option value="months"><div slot="headline" data-i18n="unit_months"></div></md-select-option>
-                <md-select-option value="years" selected><div slot="headline" data-i18n="unit_years"></div></md-select-option>
-              </md-outlined-select>
-              <md-outlined-select id="p-months" data-i18n-label="pregnancy_months_short" hidden></md-outlined-select>
-            </div>
-            <div class="sex-row">
-              <md-chip-set id="p-sex" role="radiogroup" aria-label="Sex">
-                <md-filter-chip data-sex="female" data-i18n-label="female"></md-filter-chip>
-                <md-filter-chip data-sex="male" data-i18n-label="male"></md-filter-chip>
-              </md-chip-set>
-              <label id="p-preg-row" class="preg-toggle" hidden>
-                <md-icon data-icon="pregnant_woman"></md-icon>
-                <span class="md-typescale-label-large" data-i18n="pregnant"></span>
-                <md-switch id="p-pregnant" icons></md-switch>
-              </label>
-            </div>
-            <p id="patient-error" class="error-text md-typescale-body-small" role="alert" hidden></p>
-          </div>
-        </md-outlined-card>
 
         <input id="photo-input" type="file" accept="image/*" capture="environment" hidden />
         <div class="capture-tiles">
@@ -157,8 +129,50 @@
           </span>
         </div>
 
+        <md-outlined-card id="photo-check" class="card photo-check" hidden>
+          <div id="photo-check-body" class="card-body" role="status" aria-live="polite"></div>
+        </md-outlined-card>
+
+        <md-outlined-card id="patient-card" class="card patient-card">
+          <div class="card-body">
+            <button id="patient-toggle" class="patient-toggle row space-between card-head" type="button" aria-expanded="true" aria-controls="patient-body">
+              <span class="card-title md-typescale-title-small"><md-icon data-icon="person"></md-icon><span data-i18n="patient_required"></span></span>
+              <span id="patient-status" class="badge badge--neutral" hidden></span>
+            </button>
+            <div id="patient-body" class="patient-body">
+            <div class="name-wrap">
+              <md-outlined-text-field id="p-name" data-i18n-label="name" autocomplete="off" required></md-outlined-text-field>
+              <md-list id="patient-suggestions" class="suggestions" aria-label="Matching patients" hidden></md-list>
+            </div>
+            <div class="age-row">
+              <md-outlined-text-field id="p-age" data-i18n-label="age_value" type="number" inputmode="decimal" min="0" max="120" required></md-outlined-text-field>
+              <md-outlined-select id="p-unit" data-i18n-label="age_unit">
+                <md-select-option value="days"><div slot="headline" data-i18n="unit_days"></div></md-select-option>
+                <md-select-option value="weeks"><div slot="headline" data-i18n="unit_weeks"></div></md-select-option>
+                <md-select-option value="months"><div slot="headline" data-i18n="unit_months"></div></md-select-option>
+                <md-select-option value="years" selected><div slot="headline" data-i18n="unit_years"></div></md-select-option>
+              </md-outlined-select>
+              <md-outlined-select id="p-months" data-i18n-label="pregnancy_months_short" hidden></md-outlined-select>
+            </div>
+            <div class="sex-row">
+              <md-chip-set id="p-sex" role="radiogroup" aria-label="Sex">
+                <md-filter-chip data-sex="female" data-i18n-label="female"></md-filter-chip>
+                <md-filter-chip data-sex="male" data-i18n-label="male"></md-filter-chip>
+              </md-chip-set>
+              <label id="p-preg-row" class="preg-toggle" hidden>
+                <md-icon data-icon="pregnant_woman"></md-icon>
+                <span class="md-typescale-label-large" data-i18n="pregnant"></span>
+                <md-switch id="p-pregnant" icons></md-switch>
+              </label>
+            </div>
+            <p id="patient-error" class="error-text md-typescale-body-small" role="alert" hidden></p>
+            </div>
+          </div>
+        </md-outlined-card>
         <md-outlined-text-field id="notes" type="textarea" rows="2" data-i18n-label="notes_label"></md-outlined-text-field>
         <p id="live-english" class="live-english md-typescale-body-small on-surface-variant" hidden></p>
+        <!-- Optional on-phone Gemma helper (public/js/gemma-offline.js); stays hidden unless configured and WebGPU is available -->
+        <div id="gemma-helper" hidden></div>
 
         <div class="switch-list compact">
           <label class="switch-row">

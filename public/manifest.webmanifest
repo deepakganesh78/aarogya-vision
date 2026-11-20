@@ -2,7 +2,7 @@
   "name": "Aarogya-Vision (ASHA)",
   "short_name": "Aarogya-Vision",
   "description": "Home-visit intake for young infants: checklist, photo and voice note for doctor review. Prototype.",
-  "start_url": "/",
+  "start_url": "/asha",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f6f8fb",
