@@ -51,7 +51,7 @@ test('ASHA case pins its place on the dashboard; the doctor opens it and escalat
   await page.goto('/doctor');
   await expect(page).toHaveURL(/\/live\?app=doctor$/);
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
-  await page.locator('#queue-chip').click();
+  await page.locator('#panel-signin').click();
   await page.locator('#signin-code input').fill('doctor-demo');
   await page.locator('#signin-submit').click();
   await expect(page.locator('#queue-chip')).toHaveClass(/live/, { timeout: 20_000 });
@@ -126,7 +126,7 @@ test('after prescribing, the doctor scans the block for the medicines and sends 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/live?seed=11&warmup=5&night=0&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
-  await page.locator('#queue-chip').click();
+  await page.locator('#panel-signin').click();
   await page.locator('#signin-code input').fill('doctor-demo');
   await page.locator('#signin-submit').click();
   await expect(page.locator('#queue-chip')).toHaveClass(/live/, { timeout: 20_000 });
@@ -172,8 +172,9 @@ test('after prescribing, the doctor scans the block for the medicines and sends 
 test('a doctor can sign in from the live view itself', async ({ page }) => {
   await page.goto('/live?seed=7&warmup=5&night=0&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
-  await expect(page.locator('#queue-text')).toHaveText('Doctor sign in');
-  await page.locator('#queue-chip').click();
+  // No sign-in in the top bar; the Active cases panel offers it instead.
+  await expect(page.locator('#queue-chip')).toBeHidden();
+  await page.locator('#panel-signin').click();
   await page.locator('#signin-code input').fill('asha-demo');
   await page.locator('#signin-submit').click();
   await expect(page.locator('#signin-error')).toBeVisible();

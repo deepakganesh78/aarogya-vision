@@ -417,7 +417,7 @@ function overviewDetail() {
     realBox.dataset.key = key;
     if (!groups.length) {
       const signedOut = queue.status === 'demo' || queue.status === 'expired';
-      const go = el('md-filled-tonal-button', {}, icon('lock', { slot: 'icon' }), 'Sign in as a doctor');
+      const go = el('md-filled-tonal-button', { id: 'panel-signin' }, icon('lock', { slot: 'icon' }), 'Sign in as a doctor');
       go.addEventListener('click', openSignIn);
       setChildren(realBox, el('p', { className: 'muted md-typescale-body-small' }, signedOut ? 'Sign in as a doctor to see cases sent from the ASHA app.' : 'No case from the ASHA app is waiting. New ones appear here and as red pins on the map.'), signedOut ? el('div', { className: 'actions' }, go) : null);
       return;
@@ -518,7 +518,7 @@ function queueSection() {
   if (!s) {
     const text =
       queue.status === 'demo'
-        ? 'Showing simulated cases only. Sign in as a doctor (top bar) and cases sent from the ASHA app appear here and blink on the map.'
+        ? 'Showing simulated cases only. Sign in as a doctor and cases sent from the ASHA app appear here and blink on the map.'
         : queue.status === 'expired'
           ? 'Your doctor session expired. Sign in again to show real cases.'
           : 'Connecting to the doctor queue.';
@@ -2495,6 +2495,8 @@ function renderQueueChip() {
   const [iconName, text] = QUEUE_STATUS[queue.status];
   const n = [...sim.cases.values()].filter((c) => c.external).length;
   chip.className = `queue-chip ${queue.status} md-typescale-label-medium`;
+  // Sign-in is not offered from the top bar: the chip only shows the live queue once a doctor is signed in.
+  chip.hidden = queue.status === 'demo' || queue.status === 'expired';
   setIcon(chip.querySelector('md-icon'), iconName);
   $('#queue-text').textContent = queue.status === 'live' ? `${text} · ${n} open` : text;
   const title =
@@ -2606,12 +2608,9 @@ async function submitSignIn() {
   announce('Signed in. Real cases from the ASHA app now appear on the map.');
 }
 $('#queue-chip').addEventListener('click', () => {
-  if (queue.status === 'demo' || queue.status === 'expired') openSignIn();
-  else {
-    setCollapsed('attention', false);
-    if (window.matchMedia('(max-width: 760px)').matches) setSheet('attention');
-    $('#attention-list').querySelector('button')?.focus();
-  }
+  setCollapsed('attention', false);
+  if (window.matchMedia('(max-width: 760px)').matches) setSheet('attention');
+  $('#attention-list').querySelector('button')?.focus();
 });
 $('#signin-submit').addEventListener('click', submitSignIn);
 $('#signin-cancel').addEventListener('click', () => $('#signin-dialog').close());
