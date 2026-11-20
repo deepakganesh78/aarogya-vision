@@ -640,8 +640,30 @@ body.cases-full .detail__body { width: min(1200px, 100%); margin: 0 auto; box-si
 body.cases-full .issue-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
 @media (max-width: 760px) { .full-toggle { display: none !important; } }
 
-/* ---- Switch app button (top bar) ---- */
-.switch-button { --md-filled-tonal-button-container-height: 40px; }
+/* ---- Switch app button (top bar) ----
+   Always highlighted for demo viewers: primary fill plus a constant pulsing ring, so it is clear the view can
+   be switched at any time. With reduced motion the ring stays on but does not pulse. */
+.switch-button {
+  --md-filled-tonal-button-container-height: 40px;
+  --md-filled-tonal-button-container-color: var(--md-sys-color-primary);
+  --md-filled-tonal-button-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-hover-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-focus-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-pressed-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-icon-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-hover-icon-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-focus-icon-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-pressed-icon-color: var(--md-sys-color-on-primary);
+  --md-filled-tonal-button-label-text-weight: 700;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+  animation: switch-pulse 1.8s ease-in-out infinite;
+}
+@keyframes switch-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .switch-button { animation: none; } }
 @media (max-width: 960px) {
   .switch-button__label { display: none; }
   .switch-button { --md-filled-tonal-button-leading-space: 12px; --md-filled-tonal-button-trailing-space: 12px; --md-filled-tonal-button-icon-label-space: 0px; }

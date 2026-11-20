@@ -2939,6 +2939,14 @@ document.body.dataset.ready = 'true';
   else if (app === 'doctor' || params.get('picker') === '0' || /^#case=/.test(location.hash)) enterApp('doctor');
   else openPicker();
 }
+// Hide the boot loader once the first frame of the ready page is on screen.
+requestAnimationFrame(() =>
+  requestAnimationFrame(() => {
+    const boot = $('#boot');
+    boot.classList.add('boot--done');
+    setTimeout(() => boot.remove(), 400);
+  })
+);
 
 let last = performance.now();
 let halfSecond = 0;
