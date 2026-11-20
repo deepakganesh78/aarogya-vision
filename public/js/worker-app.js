@@ -832,13 +832,8 @@ function renderPhotoCheck() {
 }
 
 function setAudio(blob, durationSec) {
-  const player = $('#audio-preview');
-  if (player.src) URL.revokeObjectURL(player.src);
   state.capture.audio = blob;
   state.capture.audioDurationSec = blob ? durationSec : null;
-  if (blob) player.src = URL.createObjectURL(blob);
-  else player.removeAttribute('src');
-  player.hidden = !blob;
   $('#audio-item').hidden = !blob;
   $('#audio-duration').textContent = blob ? formatTimer(durationSec) : '';
   $('#record').classList.toggle('captured', Boolean(blob));
