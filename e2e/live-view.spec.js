@@ -13,7 +13,7 @@ test('lead doctor live view: rural block, homes coloured by case, details and se
   const problems = [];
   watchConsole(page, problems);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/live?seed=42&warmup=20&night=0');
+  await page.goto('/live?seed=42&warmup=20&night=0&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
   await expect(page.locator('body')).toHaveAttribute('data-webgl', 'true');
   await expect(page.getByRole('note').filter({ hasText: 'Not for clinical use' })).toBeVisible();
@@ -49,7 +49,7 @@ test('ASHA case pins its place on the dashboard; the doctor opens it and escalat
 
   // /doctor is the 3D dashboard now; the doctor signs in there.
   await page.goto('/doctor');
-  await expect(page).toHaveURL(/\/live$/);
+  await expect(page).toHaveURL(/\/live\?app=doctor$/);
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
   await page.locator('#queue-chip').click();
   await page.locator('#signin-code input').fill('doctor-demo');
@@ -100,10 +100,15 @@ test('ASHA case pins its place on the dashboard; the doctor opens it and escalat
   expect(mine.decision.instructions).toContain('Take the patient to Government Medical College Hospital, Tiruvannamalai now.');
   await expect(page.locator('#attention-list .attn', { hasText: 'Live Map Test' })).toHaveCount(0);
 
-  // The rural worker app opens as a phone on the same screen; panels collapse.
-  await page.locator('#phone-toggle').click();
+  // "Switch app" returns to the picker; the rural worker app then opens as a phone on the same screen.
+  await page.locator('#switch-app').click();
+  await expect(page.locator('#picker')).toBeVisible();
+  await page.locator('#pick-worker').click();
+  await expect(page.locator('#picker')).toBeHidden();
   await expect(page.frameLocator('#phone-frame').locator('#access-code')).toBeVisible();
-  await page.locator('#phone-toggle').click();
+  await page.locator('#switch-app').click();
+  await page.locator('#pick-doctor').click();
+  await expect(page.locator('#phone')).toBeHidden();
   await page.locator('[data-collapse="attention"]').click();
   await expect(page.locator('body')).toHaveClass(/collapsed-attention/);
   await page.locator('[data-collapse="attention"]').click();
@@ -119,7 +124,7 @@ test('after prescribing, the doctor scans the block for the medicines and sends 
   const problems = [];
   watchConsole(page, problems);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/live?seed=11&warmup=5&night=0');
+  await page.goto('/live?seed=11&warmup=5&night=0&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
   await page.locator('#queue-chip').click();
   await page.locator('#signin-code input').fill('doctor-demo');
@@ -165,7 +170,7 @@ test('after prescribing, the doctor scans the block for the medicines and sends 
 });
 
 test('a doctor can sign in from the live view itself', async ({ page }) => {
-  await page.goto('/live?seed=7&warmup=5&night=0');
+  await page.goto('/live?seed=7&warmup=5&night=0&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
   await expect(page.locator('#queue-text')).toHaveText('Doctor sign in');
   await page.locator('#queue-chip').click();
@@ -177,12 +182,59 @@ test('a doctor can sign in from the live view itself', async ({ page }) => {
   await expect(page.locator('#queue-chip')).toHaveClass(/live/, { timeout: 20_000 });
 });
 
+test('first load shows the entry picker over the live map; either app can be chosen and Switch returns to it', async ({ page }) => {
+  const problems = [];
+  watchConsole(page, problems);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/live?seed=5&warmup=3&night=0');
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
+
+  // The live map keeps running behind a modal overlay with two large cards: doctor left, worker right.
+  const picker = page.locator('#picker');
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveAttribute('aria-modal', 'true');
+  await expect(page.locator('#scene')).toBeVisible();
+  const [doctor, worker] = await Promise.all([page.locator('#pick-doctor').boundingBox(), page.locator('#pick-worker').boundingBox()]);
+  expect(doctor.x).toBeLessThan(worker.x);
+  expect(doctor.width).toBeGreaterThan(400);
+  expect(worker.width).toBeGreaterThan(400);
+  await expect(page.locator('#pick-doctor')).toContainText('Doctor Dashboard');
+  await expect(page.locator('#pick-worker')).toContainText('Rural Worker App');
+  // What is behind the overlay cannot be used while it is open.
+  await expect(page.locator('.topbar')).toHaveAttribute('inert', '');
+  await page.screenshot({ path: 'test-results/entry-picker.png' });
+
+  // Doctor Dashboard: overlay gone, dashboard usable.
+  await page.locator('#pick-doctor').click();
+  await expect(picker).toBeHidden();
+  await expect(page.locator('.topbar')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('#detail .detail__head h2')).toHaveText('Active cases');
+  await expect(page.locator('#phone')).toBeHidden();
+  await expect(page.locator('#phone-toggle')).toHaveCount(0);
+
+  // Switch app: back to the same picker (Esc enters the dashboard); Rural Worker opens the phone app.
+  await page.locator('#switch-app').click();
+  await expect(picker).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(picker).toBeHidden();
+  await page.locator('#switch-app').click();
+  await page.locator('#pick-worker').click();
+  await expect(picker).toBeHidden();
+  await expect(page.locator('#phone')).toBeVisible();
+  await expect(page.frameLocator('#phone-frame').locator('#access-code')).toBeVisible();
+
+  // Links can skip the picker.
+  await page.goto('/live?app=doctor&seed=5&warmup=3');
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
+  await expect(page.locator('#picker')).toBeHidden();
+  expect(problems).toEqual([]);
+});
 test('live view on a phone in the dark scheme', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, colorScheme: 'dark' });
   const page = await ctx.newPage();
   const problems = [];
   watchConsole(page, problems);
-  await page.goto('/live?seed=7&warmup=10');
+  await page.goto('/live?seed=7&warmup=10&picker=0');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 60_000 });
   // Light on first open, even when the phone is in dark mode.
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -196,11 +248,14 @@ test('live view on a phone in the dark scheme', async ({ browser }) => {
   // The top bar scrolls sideways, every icon is reachable, and the phone icon opens the ASHA app full page.
   const bar = await page.locator('.topbar').evaluate((b) => ({ scrolls: b.scrollWidth > b.clientWidth, overflowX: getComputedStyle(b).overflowX }));
   expect(bar).toEqual({ scrolls: true, overflowX: 'auto' });
-  await expect(page.locator('#phone-toggle')).toBeVisible();
-  await expect(page.locator('#phone-toggle')).toBeInViewport();
+  await expect(page.locator('#switch-app')).toBeVisible();
+  await expect(page.locator('#switch-app')).toBeInViewport();
   await page.locator('#user-button').scrollIntoViewIfNeeded();
   await expect(page.locator('#user-button')).toBeInViewport();
-  await page.locator('#phone-toggle').click();
+  await page.locator('#switch-app').scrollIntoViewIfNeeded();
+  await page.locator('#switch-app').click();
+  await expect(page.locator('#picker')).toBeVisible();
+  await page.locator('#pick-worker').click();
   await expect(page).toHaveURL(/\/asha\?from=live$/);
   await expect(page.locator('#back-to-dashboard')).toBeVisible();
   expect(problems).toEqual([]);

@@ -80,7 +80,7 @@ npm run dev                 # builds the Material UI, then serves http://localho
 ```
 
 - Opening screen and doctor dashboard: <http://localhost:8080/> (the 3D live view; also `/live` and `/doctor`). Sign in with the chip in the top bar, demo code `doctor-demo` (Dr. R. Senthil). Without signing in it shows the simulated block only. Options: `?seed=42` repeats a run, `?season=monsoon` or `?season=festival`, `?night=1`, `#case=<id>` opens a case.
-- ASHA app: <http://localhost:8080/asha> (also the phone button on the dashboard). Demo code `asha-demo` (Parvati; a second worker: `asha-demo-2`, Meena).
+- ASHA app: <http://localhost:8080/asha> (also from the entry picker at `/`). Demo code `asha-demo` (Parvati; a second worker: `asha-demo-2`, Meena).
 - The earlier list-based console is still at <http://localhost:8080/doctor/classic> (FHIR download, filters).
 
 To use real Gemini, set `AI_PROVIDER=gemini` and either a `GEMINI_API_KEY` from Google AI Studio, or `GOOGLE_GENAI_USE_ENTERPRISE=true` with `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` (Vertex AI with your gcloud credentials).
@@ -109,7 +109,7 @@ npm run seed           # 6 demo cases from the first prototype (Murugan returns 
 3. A few seconds later: *Urgent: refer now*, and **What we understood** shows age 8 days, girl and 38.3 °C, each tagged *from voice*, plus the danger signs heard.
 4. Turn the network off. Start another visit: take a photo only, turn on **I see a danger sign**, and send. *Urgent: refer now* and the danger-sign list appear instantly, and the visit is saved encrypted.
 5. Turn the network on. The saved visit sends itself.
-6. Open the doctor dashboard (`/` or `/doctor`) on a laptop. It opens light, signed in as Dr. Senthil in demo mode, with every panel folded and **Active cases** on the right (the full-screen button spreads the list over the map). Nammiyampattu has a **red pin** and appears under **Needs attention**. Tip: the phone button at the top right shows the ASHA app on the same screen, so you can send the visit from there and watch the pin drop.
+6. Open the demo (`/`). It opens on a translucent **entry picker** over the live map with two large cards: **Doctor Dashboard** (left) and **Rural Worker App** (right). **Switch app** in the top bar returns to the picker at any time. On a phone, the Rural Worker card opens the app as a full page; on a laptop it opens as a phone beside the dashboard, so a case sent from it lands on the map. Skip the picker with `?app=doctor`, `?app=worker` or `?picker=0`. The dashboard opens light, signed in as Dr. Senthil in demo mode, with every panel folded and **Active cases** on the right (the full-screen button spreads the list over the map). Nammiyampattu has a **red pin** and appears under **Needs attention**. Tip: the phone button at the top right shows the ASHA app on the same screen, so you can send the visit from there and watch the pin drop.
 7. Click the pin (or the list). The map zooms in and the side panel lists the place's cases; open one. Show the symptoms with their evidence, the photo, the voice note in English, the patient details and the WHO guidance.
 8. Choose **Escalate**, pick the hospital and send; or **Medicines**, pick from the quick list, give the doses and send. The pin clears.
 9. After a prescription, click **Look for medicines**. Watch the scan light up the places with stock, tick a place (or use the suggestion) and click **Send bike**. The run tracker follows the bike from stop to stop to the patient.

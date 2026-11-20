@@ -2667,23 +2667,56 @@ function setCasesFull(on) {
 }
 $('#cases-full').addEventListener('click', () => setCasesFull(!document.body.classList.contains('cases-full')));
 
-// ---- Rural worker app as a phone on the same screen (hackathon demo) ------------------------------
-$('#phone-toggle').addEventListener('change', (e) => {
-  // On a phone there is no room for a phone-in-a-phone: open the ASHA app as a full page, like a native app.
-  if (window.matchMedia('(max-width: 760px)').matches) {
-    e.target.selected = false;
+// ---- Entry picker: choose the Doctor Dashboard or the Rural Worker app (hackathon demo) -----------
+// The demo opens on a translucent overlay above the live map. "Switch app" in the top bar returns to it.
+// On a phone the Rural Worker app opens as a full page, like a native app; on larger screens it opens as
+// a phone on this screen, next to the dashboard, so a case sent from it can be watched landing on the map.
+const picker = $('#picker');
+const isPhoneScreen = () => window.matchMedia('(max-width: 760px)').matches;
+
+function setPickerOpen(open) {
+  picker.hidden = !open;
+  document.body.classList.toggle('picker-open', open);
+  // Everything behind the overlay stays visible and live, but cannot be reached while it is open.
+  for (const node of document.body.children) {
+    if (node === picker || node.id === 'announcer' || node.tagName === 'SCRIPT') continue;
+    node.toggleAttribute('inert', open);
+  }
+}
+
+function showWorkerPhone(on) {
+  const frame = $('#phone-frame');
+  if (on && !frame.getAttribute('src')) frame.setAttribute('src', '/asha');
+  $('#phone').hidden = !on;
+  document.body.classList.toggle('phone-open', on);
+}
+
+function enterApp(app) {
+  if (app === 'worker' && isPhoneScreen()) {
     location.assign('/asha?from=live');
     return;
   }
-  const open = e.target.selected;
-  const frame = $('#phone-frame');
-  if (open && !frame.getAttribute('src')) frame.setAttribute('src', '/asha');
-  $('#phone').hidden = !open;
-  document.body.classList.toggle('phone-open', open);
-  e.target.setAttribute('aria-label', open ? 'Hide the rural worker app' : 'Show the rural worker app');
-  announce(open ? 'Rural worker app shown as a phone' : 'Rural worker app hidden');
-});
+  document.body.dataset.app = app;
+  setPickerOpen(false);
+  showWorkerPhone(app === 'worker');
+  announce(app === 'worker' ? 'Rural Worker app opened next to the dashboard' : 'Doctor Dashboard');
+  if (app === 'doctor') $('#switch-app').focus({ preventScroll: true });
+}
 
+function openPicker() {
+  showWorkerPhone(false);
+  delete document.body.dataset.app;
+  setPickerOpen(true);
+  announce('Choose the Doctor Dashboard or the Rural Worker app');
+  requestAnimationFrame(() => picker.focus({ preventScroll: true }));
+}
+
+$('#pick-doctor').addEventListener('click', () => enterApp('doctor'));
+$('#pick-worker').addEventListener('click', () => enterApp('worker'));
+$('#switch-app').addEventListener('click', openPicker);
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !picker.hidden) enterApp('doctor');
+});
 // ---- Top bar controls ---------------------------------------------------------------------------
 function updateClock() {
   const now = new Date();
@@ -2889,6 +2922,15 @@ renderTables(true);
 renderKpis();
 labelBinds.refresh();
 document.body.dataset.ready = 'true';
+
+// First load: the picker over the live map. A link can skip it: ?app=doctor, ?app=worker, ?picker=0,
+// or a case link (#case=...), which opens the dashboard on that case.
+{
+  const app = params.get('app');
+  if (app === 'worker') enterApp('worker');
+  else if (app === 'doctor' || params.get('picker') === '0' || /^#case=/.test(location.hash)) enterApp('doctor');
+  else openPicker();
+}
 
 let last = performance.now();
 let halfSecond = 0;

@@ -83,10 +83,10 @@
         <md-icon slot="selected" data-icon="dark_mode"></md-icon>
       </md-icon-button>
 
-      <md-icon-button id="phone-toggle" toggle aria-label="Show the rural worker app" title="Rural worker app (phone)">
-        <md-icon data-icon="mobile"></md-icon>
-        <md-icon slot="selected" data-icon="close"></md-icon>
-      </md-icon-button>
+      <md-filled-tonal-button id="switch-app" class="switch-button" aria-label="Switch app" title="Switch between the Doctor Dashboard and the Rural Worker app">
+        <md-icon slot="icon" data-icon="swap_horiz"></md-icon>
+        <span class="switch-button__label">Switch app</span>
+      </md-filled-tonal-button>
 
       <span class="menu-anchor">
         <md-icon-button id="user-button" aria-label="Account and about" aria-haspopup="menu"><span id="avatar" class="avatar md-typescale-label-large" aria-hidden="true">LD</span></md-icon-button>
@@ -259,6 +259,52 @@
       </div>
     </md-dialog>
 
+    <!-- Entry picker for the demo: a translucent overlay over the live map with two large liquid-glass cards. -->
+    <div id="picker" class="picker" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="picker-title" aria-describedby="picker-sub" hidden>
+      <div class="picker__inner">
+        <header class="picker__head">
+          <span class="picker__mark"><md-icon data-icon="local_hospital" data-filled></md-icon></span>
+          <h1 id="picker-title" class="md-typescale-headline-large">Aarogya-Vision</h1>
+          <p id="picker-sub" class="md-typescale-title-medium">Choose an app to explore. Both are live and share the same cases.</p>
+        </header>
+
+        <div class="picker__cards">
+          <button id="pick-doctor" class="liquid liquid--doctor" type="button" aria-describedby="pick-doctor-text">
+            <span class="liquid__shine" aria-hidden="true"></span>
+            <span class="liquid__top">
+              <span class="liquid__icon" aria-hidden="true"><md-icon data-icon="stethoscope"></md-icon></span>
+              <span class="liquid__kicker md-typescale-label-large">For doctors and block leads</span>
+            </span>
+            <span class="liquid__title md-typescale-headline-large">Doctor Dashboard</span>
+            <span id="pick-doctor-text" class="liquid__text md-typescale-body-large">A live 3D map of the rural health block. Red pins show where an ASHA needs a doctor. Open a case, read what the AI organised, then prescribe, escalate or send medicines by bike.</span>
+            <span class="liquid__chips" aria-hidden="true">
+              <span class="liquid__chip"><md-icon data-icon="location_on"></md-icon>Needs attention pins</span>
+              <span class="liquid__chip"><md-icon data-icon="inbox"></md-icon>Active cases</span>
+              <span class="liquid__chip"><md-icon data-icon="electric_moped"></md-icon>Medicine delivery</span>
+            </span>
+            <span class="liquid__cta md-typescale-label-large">Open the dashboard<md-icon data-icon="arrow_forward"></md-icon></span>
+          </button>
+
+          <button id="pick-worker" class="liquid liquid--worker" type="button" aria-describedby="pick-worker-text">
+            <span class="liquid__shine" aria-hidden="true"></span>
+            <span class="liquid__top">
+              <span class="liquid__icon" aria-hidden="true"><md-icon data-icon="mobile"></md-icon></span>
+              <span class="liquid__kicker md-typescale-label-large">For ASHA health workers</span>
+            </span>
+            <span class="liquid__title md-typescale-headline-large">Rural Worker App</span>
+            <span id="pick-worker-text" class="liquid__text md-typescale-body-large">The phone app a health worker carries. Take a photo of a rash, speak in Tamil or Hindi, and send. The doctor sees it in English and replies on the same screen.</span>
+            <span class="liquid__chips" aria-hidden="true">
+              <span class="liquid__chip"><md-icon data-icon="photo_camera"></md-icon>Photo check</span>
+              <span class="liquid__chip"><md-icon data-icon="mic"></md-icon>Voice in Tamil or Hindi</span>
+              <span class="liquid__chip"><md-icon data-icon="translate"></md-icon>English for the doctor</span>
+            </span>
+            <span class="liquid__cta md-typescale-label-large">Open the phone app<md-icon data-icon="arrow_forward"></md-icon></span>
+          </button>
+        </div>
+
+        <p class="picker__foot md-typescale-body-small">Switch any time with the button in the top bar. Prototype with synthetic demo data. Not for clinical use.</p>
+      </div>
+    </div>
     <div id="announcer" class="visually-hidden" aria-live="polite"></div>
   </body>
 </html>

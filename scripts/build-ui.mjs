@@ -33,7 +33,7 @@ const ICONS = [
   'park', 'pause', 'play_arrow', 'rainy', 'rotate_left', 'rotate_right', 'route', 'storefront', 'sunny', 'temple_hindu',
   'train', 'trending_down', 'trending_up', 'vaccines', 'view_in_ar', 'warehouse', 'zoom_in', 'zoom_out', 'water_drop',
   'directions_bus', 'school', 'agriculture', 'cottage', 'open_in_new', 'mobile', 'keyboard_arrow_up', 'sick', 'emergency', 'add_circle', 'record_voice_over', 'help', 'arrow_forward',
-  'local_pharmacy', 'radar', 'near_me', 'pin_drop', 'package_2', 'open_in_full', 'close_fullscreen'
+  'local_pharmacy', 'radar', 'near_me', 'pin_drop', 'package_2', 'open_in_full', 'close_fullscreen', 'swap_horiz'
 ];
 
 async function buildTheme() {

@@ -588,7 +588,7 @@ export function createApp({ config, store, audit, processor, provider, auth, gui
   // The earlier list-based console stays at /doctor/classic.
   app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'live.html')));
   app.get('/asha', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
-  app.get('/doctor', (req, res) => res.redirect(302, '/live'));
+  app.get('/doctor', (req, res) => res.redirect(302, '/live?app=doctor'));
   app.get('/doctor/classic', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'doctor.html')));
   app.get('/offline-test', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'offline-test.html')));
   // Block live view for lead doctors (same strict CSP as the other pages).
