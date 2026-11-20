@@ -2,25 +2,40 @@
    fonts and the 3D scene, and hides the half-built page until live-app.js reports it is ready. */
 .boot {
   position: fixed; inset: 0; z-index: 2147483647;
-  display: grid; place-content: center; justify-items: center; gap: 18px; padding: 24px; text-align: center;
+  display: grid; place-content: center; justify-items: center; gap: 32px; padding: 24px; text-align: center;
   background: #faf8ff; color: #434654;
   font: 500 15px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   transition: opacity 280ms ease, visibility 0s linear 280ms;
 }
-.boot__mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: #0056d2; }
-.boot__mark svg { width: 32px; height: 32px; fill: #fff; }
-.boot__spinner {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 4px solid #e0e2ef; border-top-color: #0056d2;
-  animation: boot-spin 900ms linear infinite;
+.boot__mark {
+  position: relative; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; background: #0056d2;
+  animation: boot-beat 1.4s ease-in-out infinite;
+}
+.boot__mark svg { width: 36px; height: 36px; fill: #fff; }
+/* A soft ring that spreads out from the logo on every beat. */
+.boot__mark::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; border: 3px solid #0056d2;
+  animation: boot-ring 1.4s ease-out infinite;
 }
 .boot.boot--done { opacity: 0; visibility: hidden; pointer-events: none; }
 :root[data-theme='dark'] .boot { background: #10131c; color: #c3c6d6; }
 :root[data-theme='dark'] .boot__mark { background: #b2c5ff; }
+:root[data-theme='dark'] .boot__mark::after { border-color: #b2c5ff; }
 :root[data-theme='dark'] .boot__mark svg { fill: #10131c; }
-:root[data-theme='dark'] .boot__spinner { border-color: #32343f; border-top-color: #b2c5ff; }
-@keyframes boot-spin { to { transform: rotate(360deg); } }
+/* Heartbeat: two quick beats, then a rest. */
+@keyframes boot-beat {
+  0%, 40%, 100% { transform: scale(1); }
+  12% { transform: scale(1.12); }
+  24% { transform: scale(0.98); }
+  32% { transform: scale(1.08); }
+}
+@keyframes boot-ring {
+  0% { transform: scale(1); opacity: .55; }
+  70%, 100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes boot-fade { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) {
-  .boot__spinner { animation-duration: 2.4s; }
+  .boot__mark { animation: boot-fade 2.4s ease-in-out infinite; }
+  .boot__mark::after { display: none; }
   .boot { transition: none; }
 }
